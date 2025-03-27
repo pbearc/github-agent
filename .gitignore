@@ -1,0 +1,43 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go specific
+*.test
+*.out
+go.work
+
+# Environment variables
+.env
+
+# Dependency directories
+vendor/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS specific files
+.DS_Store
+
+# Logs
+*.log
+
+# Binary output directories
+bin/
+dist/
+
+# Frontend build artifacts
+frontend/build/
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+
+# Temporary files
+tmp/
+temp/

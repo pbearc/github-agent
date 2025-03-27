@@ -1,0 +1,101 @@
+package llm
+
+import (
+	"context"
+
+	"github.com/google/generative-ai-go/genai"
+	"github.com/pbearc/github-agent/backend/pkg/common"
+	"google.golang.org/api/option"
+)
+
+// GeminiClient represents a Gemini API client
+type GeminiClient struct {
+	client *genai.Client
+	model  *genai.GenerativeModel
+	logger *common.Logger
+}
+
+// NewGeminiClient creates a new Gemini client
+func NewGeminiClient(apiKey string) (*GeminiClient, error) {
+	if apiKey == "" {
+		return nil, common.NewError("Gemini API key is required")
+	}
+
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return nil, common.WrapError(err, "failed to create Gemini client")
+	}
+
+	// Use Gemini-1.5-pro model
+	model := client.GenerativeModel("gemini-1.5-pro")
+
+	return &GeminiClient{
+		client: client,
+		model:  model,
+		logger: common.NewLogger(),
+	}, nil
+}
+
+// GenerateText generates a text response based on the provided prompt
+func (c *GeminiClient) GenerateText(ctx context.Context, prompt string) (string, error) {
+	if prompt == "" {
+		return "", common.NewError("prompt cannot be empty")
+	}
+
+	resp, err := c.model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return "", common.WrapError(err, "failed to generate content")
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return "", common.NewError("no response generated")
+	}
+
+	// Get the text from the response
+	text, ok := resp.Candidates[0].Content.Parts[0].(genai.Text)
+	if !ok {
+		return "", common.NewError("unexpected response format")
+	}
+
+	return string(text), nil
+}
+
+// GenerateReadme generates a README.md file based on repository information
+func (c *GeminiClient) GenerateReadme(ctx context.Context, repoInfo map[string]interface{}, files []string) (string, error) {
+	// Create a prompt for generating a README
+	prompt := buildReadmePrompt(repoInfo, files)
+	
+	return c.GenerateText(ctx, prompt)
+}
+
+// GenerateDockerfile generates a Dockerfile based on repository information
+func (c *GeminiClient) GenerateDockerfile(ctx context.Context, repoInfo map[string]interface{}, mainLanguage string) (string, error) {
+	// Create a prompt for generating a Dockerfile
+	prompt := buildDockerfilePrompt(repoInfo, mainLanguage)
+	
+	return c.GenerateText(ctx, prompt)
+}
+
+// GenerateCodeComments generates comments for a code file
+func (c *GeminiClient) GenerateCodeComments(ctx context.Context, code string, language string) (string, error) {
+	// Create a prompt for generating code comments
+	prompt := buildCodeCommentsPrompt(code, language)
+	
+	return c.GenerateText(ctx, prompt)
+}
+
+// GenerateCodeRefactor suggests refactoring for a code file
+func (c *GeminiClient) GenerateCodeRefactor(ctx context.Context, code string, language string, instructions string) (string, error) {
+	// Create a prompt for code refactoring
+	prompt := buildCodeRefactorPrompt(code, language, instructions)
+	
+	return c.GenerateText(ctx, prompt)
+}
+
+// Close closes the client
+func (c *GeminiClient) Close() {
+	if c.client != nil {
+		c.client.Close()
+	}
+}
