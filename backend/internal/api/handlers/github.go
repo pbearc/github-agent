@@ -34,7 +34,7 @@ func (h *Handler) GetRepositoryInfo(c *gin.Context) {
 	}
 
 	// Set a timeout for the GitHub API request
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Get repository info
@@ -103,7 +103,7 @@ func (h *Handler) GetFileContent(c *gin.Context) {
 	branch := req.Branch
 	if branch == "" {
 		// Get repository info to determine the default branch
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 		defer cancel()
 		
 		repoInfo, err := h.GithubClient.GetRepositoryInfo(ctx, owner, repo)
@@ -115,7 +115,7 @@ func (h *Handler) GetFileContent(c *gin.Context) {
 	}
 
 	// Set a timeout for the GitHub API request
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Get file content
@@ -170,7 +170,7 @@ func (h *Handler) ListFiles(c *gin.Context) {
 	branch := req.Branch
 	if branch == "" {
 		// Get repository info to determine the default branch
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 		defer cancel()
 		
 		repoInfo, err := h.GithubClient.GetRepositoryInfo(ctx, owner, repo)
@@ -182,7 +182,7 @@ func (h *Handler) ListFiles(c *gin.Context) {
 	}
 
 	// Set a timeout for the GitHub API request
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// List files
@@ -242,7 +242,7 @@ func (h *Handler) SearchCode(c *gin.Context) {
 	}
 
 	// Set a timeout for the GitHub API request
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 95*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Search code
@@ -339,7 +339,7 @@ func (h *Handler) PushFile(c *gin.Context) {
 	branch := req.Branch
 	if branch == "" {
 		// Get repository info to determine the default branch
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 95*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 		defer cancel()
 		
 		repoInfo, err := h.GithubClient.GetRepositoryInfo(ctx, owner, repo)
@@ -357,7 +357,7 @@ func (h *Handler) PushFile(c *gin.Context) {
 	}
 
 	// Set a timeout for the GitHub API request
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Push the file

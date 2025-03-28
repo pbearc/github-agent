@@ -1,21 +1,9 @@
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
-import { Menu, Transition } from "@headlessui/react";
+import { Link } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 
-const Navbar = () => {
+const Navbar = ({ toggleSidebar }) => {
   const { darkMode, toggleDarkMode } = useTheme();
-
-  const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Repository Info", path: "/repository" },
-    { name: "Generate README", path: "/generate/readme" },
-    { name: "Generate Dockerfile", path: "/generate/dockerfile" },
-    { name: "Add Comments", path: "/generate/comments" },
-    { name: "Refactor Code", path: "/generate/refactor" },
-    { name: "Code Search", path: "/search" },
-    { name: "Settings", path: "/settings" },
-  ];
 
   return (
     <header className="bg-white dark:bg-dark-100 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
@@ -42,27 +30,33 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex md:space-x-6">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-md text-sm font-medium ${
-                    isActive
-                      ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`
-                }
-              >
-                {item.name}
-              </NavLink>
-            ))}
+          {/* Main navigation - only show a few key items */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link
+              to="/"
+              className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium"
+            >
+              Home
+            </Link>
+            <Link
+              to="/repository"
+              className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium"
+            >
+              Repository
+            </Link>
+            <a
+              href="https://github.com/pbearc/github-agent"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium"
+            >
+              GitHub
+            </a>
           </nav>
 
-          {/* Right section - Theme toggle */}
-          <div className="flex items-center">
+          {/* Right section - Theme toggle and menu button */}
+          <div className="flex items-center space-x-4">
+            {/* Theme toggle */}
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 focus:outline-none"
@@ -93,56 +87,27 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden ml-4">
-              <Menu as="div" className="relative">
-                <Menu.Button className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 focus:outline-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
-                </Menu.Button>
-
-                <Transition
-                  as={React.Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-dark-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
-                    <div className="py-1">
-                      {navItems.map((item) => (
-                        <Menu.Item key={item.path}>
-                          {({ active }) => (
-                            <Link
-                              to={item.path}
-                              className={`${
-                                active ? "bg-gray-100 dark:bg-gray-700" : ""
-                              } block px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
-                            >
-                              {item.name}
-                            </Link>
-                          )}
-                        </Menu.Item>
-                      ))}
-                    </div>
-                  </Menu.Items>
-                </Transition>
-              </Menu>
-            </div>
+            {/* Menu button */}
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 focus:outline-none"
+              aria-label="Open menu"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </div>

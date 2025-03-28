@@ -10,9 +10,13 @@ const Footer = () => {
       { name: "Generate Dockerfile", href: "/generate/dockerfile" },
       { name: "Add Comments", href: "/generate/comments" },
       { name: "Refactor Code", href: "/generate/refactor" },
-      { name: "Code Search", href: "/search" },
     ],
-    support: [
+    resources: [
+      { name: "Repository Info", href: "/repository" },
+      { name: "Code Search", href: "/search" },
+      { name: "Settings", href: "/settings" },
+    ],
+    company: [
       {
         name: "GitHub",
         href: "https://github.com/pbearc/github-agent",
@@ -23,15 +27,14 @@ const Footer = () => {
         href: "https://github.com/pbearc/github-agent#readme",
         external: true,
       },
-      { name: "Settings", href: "/settings" },
     ],
   };
 
   return (
     <footer className="bg-white dark:bg-dark-100 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="xl:grid xl:grid-cols-3 xl:gap-8">
-          <div className="space-y-4 xl:col-span-1">
+        <div className="xl:grid xl:grid-cols-4 xl:gap-8">
+          <div className="space-y-8 xl:col-span-1">
             <Link to="/" className="flex items-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -49,12 +52,12 @@ const Footer = () => {
                 GitHub Agent
               </span>
             </Link>
-            <p className="text-gray-500 dark:text-gray-400 text-base">
-              AI-powered tools to enhance your GitHub repositories. Generate
-              READMEs, Dockerfiles, and more with ease.
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              AI-powered tools to enhance your GitHub repositories with
+              documentation, analysis, and code improvements.
             </p>
           </div>
-          <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
+          <div className="mt-12 grid grid-cols-3 gap-8 xl:mt-0 xl:col-span-3">
             <div>
               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wider uppercase">
                 Features
@@ -67,14 +70,14 @@ const Footer = () => {
                         href={item.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                       >
                         {item.name}
                       </a>
                     ) : (
                       <Link
                         to={item.href}
-                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                       >
                         {item.name}
                       </Link>
@@ -88,21 +91,49 @@ const Footer = () => {
                 Resources
               </h3>
               <ul className="mt-4 space-y-4">
-                {navigation.support.map((item) => (
+                {navigation.resources.map((item) => (
                   <li key={item.name}>
                     {item.external ? (
                       <a
                         href={item.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                       >
                         {item.name}
                       </a>
                     ) : (
                       <Link
                         to={item.href}
-                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
+                      >
+                        {item.name}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wider uppercase">
+                GitHub
+              </h3>
+              <ul className="mt-4 space-y-4">
+                {navigation.company.map((item) => (
+                  <li key={item.name}>
+                    {item.external ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
+                      >
+                        {item.name}
+                      </a>
+                    ) : (
+                      <Link
+                        to={item.href}
+                        className="text-base text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                       >
                         {item.name}
                       </Link>

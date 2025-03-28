@@ -33,7 +33,7 @@ func (h *Handler) GenerateReadme(c *gin.Context) {
 	}
 
 	// Set a timeout for the operation
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 180*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Get repository info
@@ -116,7 +116,7 @@ func (h *Handler) GenerateDockerfile(c *gin.Context) {
 	}
 
 	// Set a timeout for the operation
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 180*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Get repository info
@@ -187,7 +187,7 @@ func (h *Handler) GenerateComments(c *gin.Context) {
 	branch := req.Branch
 	if branch == "" {
 		// Get repository info to determine the default branch
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 95*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 		defer cancel()
 
 		repoInfo, err := h.GithubClient.GetRepositoryInfo(ctx, owner, repo)
@@ -199,7 +199,7 @@ func (h *Handler) GenerateComments(c *gin.Context) {
 	}
 
 	// Set a timeout for the operation
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 180*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Get file content
@@ -257,7 +257,7 @@ func (h *Handler) RefactorCode(c *gin.Context) {
 	branch := req.Branch
 	if branch == "" {
 		// Get repository info to determine the default branch
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 95*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 		defer cancel()
 
 		repoInfo, err := h.GithubClient.GetRepositoryInfo(ctx, owner, repo)
@@ -269,7 +269,7 @@ func (h *Handler) RefactorCode(c *gin.Context) {
 	}
 
 	// Set a timeout for the operation
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 180*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Get file content
@@ -323,7 +323,7 @@ func (h *Handler) ProcessLLMOperation(c *gin.Context) {
 	}
 
 	// Set a timeout for the operation
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 180*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 	defer cancel()
 
 	// Process the operation

@@ -75,7 +75,7 @@ func main() {
 	log.Println("Shutting down server...")
 
 	// Create a deadline to wait for current operations to complete
-	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {

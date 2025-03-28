@@ -4,10 +4,11 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { motion } from "framer-motion";
 
-const FeatureCard = ({ icon, title, description, link, delay }) => (
+const FeatureCard = ({ icon, title, description, link, delay = 0 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-100px" }}
     transition={{ duration: 0.5, delay }}
     whileHover={{ y: -5, transition: { duration: 0.2 } }}
     className="col-span-1"
@@ -15,7 +16,7 @@ const FeatureCard = ({ icon, title, description, link, delay }) => (
     <Card className="h-full">
       <div className="flex flex-col h-full">
         <div className="flex items-center mb-4">
-          <div className="p-2 rounded-md bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300">
+          <div className="p-2 rounded-md bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">
             {icon}
           </div>
         </div>
@@ -184,335 +185,465 @@ const Dashboard = () => {
   ];
 
   return (
-    <div>
+    <div className="space-y-24">
       {/* Hero Section */}
-      <div className="relative overflow-hidden mb-16">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-secondary-600 opacity-10 dark:opacity-20"></div>
-        <div className="relative px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
+      <section className="pt-12 md:pt-20 pb-16">
+        <div className="text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.h1
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
+            transition={{ duration: 0.6 }}
+            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white"
           >
-            <motion.h1
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-5xl md:text-6xl"
-            >
-              <span className="block">Supercharge your</span>
-              <span className="block text-primary-600 dark:text-primary-500">
-                GitHub Repositories
-              </span>
-            </motion.h1>
+            <span className="block">Enhance your</span>
+            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
+              GitHub repositories
+            </span>
+            <span className="block">with AI</span>
+          </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-4 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-300"
-            >
-              AI-powered tools to generate, analyze, and improve your code. From
-              README creation to code refactoring, all in one place.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center"
-            >
-              <div className="space-y-4 sm:space-y-0 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5">
-                <Link to="/repository">
-                  <Button variant="primary" size="lg" fullWidth>
-                    Get Started
-                  </Button>
-                </Link>
-                <a
-                  href="https://github.com/pbearc/github-agent"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="outline" size="lg" fullWidth>
-                    View on GitHub
-                  </Button>
-                </a>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Animated blob shapes */}
-        <div className="absolute top-0 left-0 -translate-x-1/2 transform">
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              x: [0, 20, 0],
-              y: [0, 30, 0],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
-            className="w-72 h-72 bg-primary-500 opacity-10 rounded-full"
-          />
-        </div>
-        <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 transform">
-          <motion.div
-            animate={{
-              scale: [1, 1.3, 1],
-              x: [0, -20, 0],
-              y: [0, -30, 0],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              repeatType: "reverse",
-            }}
-            className="w-72 h-72 bg-secondary-500 opacity-10 rounded-full"
-          />
-        </div>
-      </div>
-
-      {/* Features section */}
-      <div className="mb-16">
-        <div className="text-center mb-12">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-3xl font-bold text-gray-900 dark:text-white"
-          >
-            Powerful Features
-          </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-4 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-400"
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-6 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300"
           >
-            Everything you need to boost your GitHub repositories
+            GitHub Agent uses AI to automate documentation, analyze code, and
+            enhance your development workflow.
           </motion.p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <FeatureCard
-              key={feature.title}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-              link={feature.link}
-              delay={0.1 + index * 0.1}
-            />
-          ))}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center gap-4"
+          >
+            <Link to="/repository">
+              <Button variant="primary" size="lg">
+                Get Started
+              </Button>
+            </Link>
+            <a
+              href="https://github.com/pbearc/github-agent"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="lg">
+                View on GitHub
+              </Button>
+            </a>
+          </motion.div>
         </div>
-      </div>
+      </section>
+
+      {/* Product overview section */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="lg:grid lg:grid-cols-2 lg:gap-16 items-center"
+          >
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                What is GitHub Agent?
+              </h2>
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+                GitHub Agent is an AI-powered tool that helps developers improve
+                their GitHub repositories with automated code analysis,
+                documentation, and enhancement.
+              </p>
+              <div className="mt-8 space-y-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 text-white">
+                      <svg
+                        className="h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Automatic Documentation
+                    </h3>
+                    <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                      Generate professional READMEs and Dockerfiles with a
+                      single click, customized to your repository.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 text-white">
+                      <svg
+                        className="h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Code Improvements
+                    </h3>
+                    <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                      Add comments, refactor code, and find bugs with
+                      intelligent AI analysis.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 text-white">
+                      <svg
+                        className="h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Streamlined Workflow
+                    </h3>
+                    <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                      Push changes directly to your repository with no
+                      additional setup.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-10 lg:mt-0 flex justify-center items-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="relative rounded-xl bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 shadow-xl overflow-hidden p-8"
+              >
+                <div className="w-full h-full max-w-md rounded-md overflow-hidden shadow-2xl">
+                  <img
+                    className="w-full rounded-t-md"
+                    src="/api/placeholder/600/300"
+                    alt="GitHub Agent Screenshot"
+                  />
+                  <div className="bg-white dark:bg-dark-100 p-5 rounded-b-md">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      AI-Powered Repository Enhancement
+                    </h3>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">
+                      Transform your repositories with intelligent documentation
+                      and code analysis.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary-500 opacity-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 bg-secondary-500 opacity-20 rounded-full"></div>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How it works section */}
+      <section className="py-12 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <motion.h2
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-3xl font-bold text-gray-900 dark:text-white"
+            >
+              How It Works
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-4 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300"
+            >
+              Simple, powerful, and efficient workflow
+            </motion.p>
+          </div>
+
+          <div className="mt-16">
+            <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="text-center"
+              >
+                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mx-auto">
+                  <svg
+                    className="h-8 w-8"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
+                  1. Connect
+                </h3>
+                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                  Paste your GitHub repository URL and connect instantly with no
+                  setup required.
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mt-10 lg:mt-0 text-center"
+              >
+                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mx-auto">
+                  <svg
+                    className="h-8 w-8"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
+                  2. Enhance
+                </h3>
+                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                  Choose from our suite of AI-powered tools to enhance your
+                  repository's code and documentation.
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="mt-10 lg:mt-0 text-center"
+              >
+                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mx-auto">
+                  <svg
+                    className="h-8 w-8"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
+                  3. Deploy
+                </h3>
+                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
+                  Review the AI-generated content and push changes directly to
+                  your repository.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features grid section */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <motion.h2
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-3xl font-bold text-gray-900 dark:text-white"
+            >
+              Features
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-4 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300"
+            >
+              Everything you need to optimize your GitHub repositories
+            </motion.p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <FeatureCard
+                key={feature.title}
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+                link={feature.link}
+                delay={0.1 * index}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Recently used repositories section */}
       {recentlyUsed.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mb-16"
-        >
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Recently Used Repositories
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recentlyUsed.map((repo, index) => (
-              <motion.div
-                key={repo.url}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 * index }}
-              >
-                <Card>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                    {repo.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    {repo.owner}
-                  </p>
-                  <div className="flex space-x-2 mt-2">
-                    <Link to="/repository" state={{ url: repo.url }}>
-                      <Button size="sm" variant="primary">
-                        View Info
-                      </Button>
-                    </Link>
-                    <a
-                      href={repo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button size="sm" variant="outline">
-                        Open in GitHub
-                      </Button>
-                    </a>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
+        <section className="py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.h2
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-2xl font-bold text-gray-900 dark:text-white mb-8"
+            >
+              Recently Used Repositories
+            </motion.h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {recentlyUsed.map((repo, index) => (
+                <motion.div
+                  key={repo.url}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: 0.1 * index }}
+                >
+                  <Card>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                      {repo.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      {repo.owner}
+                    </p>
+                    <div className="flex space-x-2 mt-2">
+                      <Link to="/repository" state={{ url: repo.url }}>
+                        <Button size="sm" variant="primary">
+                          View Info
+                        </Button>
+                      </Link>
+                      <a
+                        href={repo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" variant="outline">
+                          Open in GitHub
+                        </Button>
+                      </a>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </motion.div>
+        </section>
       )}
 
-      {/* Testimonials / How it works */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="mb-16 bg-gray-50 dark:bg-gray-800 rounded-lg p-8"
-      >
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            How It Works
-          </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-400">
-            Simple yet powerful workflow to enhance your GitHub repositories
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="text-center"
-          >
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
-              1. Connect
-            </h3>
-            <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-              Paste your GitHub repository URL and connect instantly
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="text-center"
-          >
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                />
-              </svg>
-            </div>
-            <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
-              2. Select Tool
-            </h3>
-            <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-              Choose from our suite of AI-powered tools to enhance your
-              repository
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="text-center"
-          >
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
-              3. Generate & Push
-            </h3>
-            <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-              Review the AI-generated content and push directly to your
-              repository
-            </p>
-          </motion.div>
-        </div>
-      </motion.div>
-
       {/* CTA section */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
-        className="bg-primary-600 dark:bg-primary-800 rounded-lg shadow-xl overflow-hidden"
-      >
-        <div className="px-6 py-12 sm:px-12 lg:px-16 lg:py-16">
-          <div className="max-w-7xl mx-auto">
-            <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
-              <div>
-                <h2 className="text-3xl font-extrabold text-white">
-                  Ready to enhance your GitHub repositories?
-                </h2>
-                <p className="mt-4 text-lg text-primary-100 dark:text-primary-200">
-                  Start using GitHub Agent today and experience the power of
-                  AI-assisted development. No account required - just paste your
-                  repository URL and get started.
-                </p>
-                <div className="mt-8">
-                  <div className="inline-flex rounded-md shadow">
-                    <Link to="/repository">
-                      <Button variant="white" size="lg">
-                        Get Started Now
-                      </Button>
-                    </Link>
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="rounded-2xl bg-gradient-to-r from-primary-600 to-secondary-700 shadow-xl overflow-hidden"
+          >
+            <div className="px-6 py-12 sm:px-12 lg:px-16 lg:py-16">
+              <div className="max-w-7xl mx-auto">
+                <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-white">
+                      Ready to enhance your GitHub repositories?
+                    </h2>
+                    <p className="mt-4 text-lg text-primary-100 dark:text-primary-200">
+                      Start using GitHub Agent today and experience the power of
+                      AI-assisted development. No account required - just paste
+                      your repository URL and get started.
+                    </p>
+                    <div className="mt-8">
+                      <div className="inline-flex rounded-md shadow">
+                        <Link to="/repository">
+                          <Button variant="white" size="lg">
+                            Get Started Now
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-10 lg:mt-0 lg:col-start-2">
+                    <div className="flex justify-center lg:justify-end">
+                      <img
+                        className="w-full max-w-md rounded-lg shadow-lg"
+                        src="/api/placeholder/600/400"
+                        alt="GitHub Agent"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="mt-10 lg:mt-0 lg:col-start-2">
-                <div className="flex justify-center lg:justify-end">
-                  <img
-                    className="w-full max-w-md rounded-lg shadow-lg"
-                    src="/api/placeholder/600/400"
-                    alt="GitHub Agent"
-                  />
-                </div>
-              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </section>
     </div>
   );
 };
