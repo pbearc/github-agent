@@ -37,6 +37,9 @@ func main() {
 	}
 	router := gin.Default()
 
+	// Apply global middleware
+	router.Use(middleware.CORS())
+	
 	// Initialize clients
 	githubClient, err := github.NewClient(cfg.GitHubToken)
 	if err != nil {
@@ -50,9 +53,6 @@ func main() {
 
 	// Set up API handlers
 	handlers.SetupRoutes(router, githubClient, llmClient, cfg)
-
-	// Apply global middleware
-	router.Use(middleware.CORS())
 	
 	// Set up the server
 	server := &http.Server{
@@ -75,7 +75,7 @@ func main() {
 	log.Println("Shutting down server...")
 
 	// Create a deadline to wait for current operations to complete
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
