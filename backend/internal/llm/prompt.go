@@ -31,7 +31,7 @@ Create a professional README.md that includes:
 8. Proper Markdown formatting with headings, code blocks, and lists
 9. Badges if applicable (e.g., build status, version)
 
-Format your response as a complete Markdown document ready to be used as a README.md file.
+Your response will be directly copy and paste in the Github README.md file. Do not wrap your response in backticks or any other formatting. Just provide the content of the README.md. 
 `, repoInfoStr, filesList)
 }
 
@@ -57,7 +57,7 @@ Create a production-ready Dockerfile that:
 7. Includes appropriate labels
 8. Provides clear comments explaining each step
 
-Format your response as a complete Dockerfile with comments, ready to be used in the repository.
+Format your response as a complete Dockerfile with comments, ready to be used in the repository. Do not wrap your response in backticks or any other formatting. Just provide the content of the Dockerfile.
 `, repoInfoStr, mainLanguage)
 }
 
