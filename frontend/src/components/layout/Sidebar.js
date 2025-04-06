@@ -272,7 +272,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         />
 
         {/* Sidebar panel */}
-        <div className="absolute inset-y-0 right-0 max-w-xs w-full flex">
+        <div className="absolute inset-y-0 right-0 w-64 flex">
           <SidebarContent />
         </div>
       </div>
