@@ -64,6 +64,13 @@ const searchService = {
     api.post("/search/code", { url, query, branch }),
 };
 
+const navigatorService = {
+  index: (url, branch = "") => api.post("/navigate/index", { url, branch }),
+
+  question: (url, question, branch = "", topK = 5) =>
+    api.post("/navigate/question", { url, question, branch, top_k: topK }),
+};
+
 // Push endpoints
 const pushService = {
   file: (url, path, content, message = "", branch = "") =>
@@ -88,4 +95,5 @@ export {
   pushService,
   llmService,
   healthService,
+  navigatorService,
 };

@@ -99,3 +99,27 @@ func (c *GeminiClient) Close() {
 		c.client.Close()
 	}
 }
+
+// CreateEmbedding generates an embedding for a text using the Gemini API
+// CreateEmbedding generates an embedding for a text using the Gemini API
+func (c *GeminiClient) CreateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	if text == "" {
+		return nil, common.NewError("text cannot be empty")
+	}
+
+	// Use the Gemini embedding model
+	model := c.client.EmbeddingModel("models/embedding-001")
+	
+	// Create the embedding - directly use the text as a part
+	resp, err := model.EmbedContent(ctx, genai.Text(text))
+	if err != nil {
+		return nil, common.WrapError(err, "failed to create embedding")
+	}
+
+	// Return embeddings
+	return resp.Embedding.Values, nil
+}
+// GetEmbeddingDimension returns the dimension of the Gemini embeddings
+func (c *GeminiClient) GetEmbeddingDimension() int {
+	return 768 // Gemini embeddings are 768 dimensions
+}

@@ -28,46 +28,47 @@ func NewHandler(githubClient *github.Client, llmClient *llm.GeminiClient, cfg *c
 
 // SetupRoutes sets up all API routes
 func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm.GeminiClient, cfg *config.Config) {
-	handler := NewHandler(githubClient, llmClient, cfg)
+    handler := NewHandler(githubClient, llmClient, cfg)
 
-	// Health check
-	router.GET("/health", handler.HealthCheck)
+    // Health check
+    router.GET("/health", handler.HealthCheck)
 
-	// API routes
-	api := router.Group("/api")
-	{
-		// Repository routes
-		repo := api.Group("/repo")
-		{
-			repo.POST("/info", handler.GetRepositoryInfo)
-			repo.POST("/file", handler.GetFileContent)
-			repo.POST("/files", handler.ListFiles)
-		}
+    // API routes
+    api := router.Group("/api")
+    {
+        // Repository routes
+        repo := api.Group("/repo")
+        {
+            repo.POST("/info", handler.GetRepositoryInfo)
+            repo.POST("/file", handler.GetFileContent)
+            repo.POST("/files", handler.ListFiles)
+        }
 
-		// Generation routes
-		generate := api.Group("/generate")
-		{
-			generate.POST("/readme", handler.GenerateReadme)
-			generate.POST("/dockerfile", handler.GenerateDockerfile)
-			generate.POST("/comments", handler.GenerateComments)
-			generate.POST("/refactor", handler.RefactorCode)
-		}
+        // Generation routes
+        generate := api.Group("/generate")
+        {
+            generate.POST("/readme", handler.GenerateReadme)
+            generate.POST("/dockerfile", handler.GenerateDockerfile)
+            generate.POST("/comments", handler.GenerateComments)
+            generate.POST("/refactor", handler.RefactorCode)
+        }
 
-		// Search routes
-		search := api.Group("/search")
-		{
-			search.POST("/code", handler.SearchCode)
-		}
+        // Navigator routes (replacing search)
+        navigate := api.Group("/navigate")
+        {
+            navigate.POST("/index", handler.IndexCodebase)
+            navigate.POST("/question", handler.NavigateCodebase)
+        }
 
-		// Push routes
-		push := api.Group("/push")
-		{
-			push.POST("/file", handler.PushFile)
-		}
+        // Push routes
+        push := api.Group("/push")
+        {
+            push.POST("/file", handler.PushFile)
+        }
 
-		// LLM operation route
-		api.POST("/llm/operation", handler.ProcessLLMOperation)
-	}
+        // LLM operation route
+        api.POST("/llm/operation", handler.ProcessLLMOperation)
+    }
 }
 
 // HealthCheck handles health check requests
