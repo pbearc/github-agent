@@ -44,6 +44,12 @@ func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm
             repo.POST("/files", handler.ListFiles)
         }
 
+        // Code search routes
+        search := api.Group("/search")
+        {
+            search.POST("/code", handler.SearchCode)
+        }
+
         // Generation routes
         generate := api.Group("/generate")
         {
@@ -58,12 +64,27 @@ func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm
         {
             navigate.POST("/index", handler.IndexCodebase)
             navigate.POST("/question", handler.NavigateCodebase)
+            navigate.POST("/walkthrough", handler.GenerateCodeWalkthrough)
+            navigate.POST("/function", handler.ExplainFunction)
+            navigate.POST("/architecture", handler.VisualizeArchitecture)
+            navigate.POST("/practices", handler.GenerateBestPracticesGuide)
         }
 
         // Push routes
         push := api.Group("/push")
         {
             push.POST("/file", handler.PushFile)
+        }
+
+        pr := api.Group("/pr")
+        {
+            pr.POST("/summary", handler.GetPRSummary)
+        }
+
+        llmNavigate := api.Group("/llm-navigate")
+        {
+            llmNavigate.POST("/index", handler.IndexCodebaseForNavigation) // Renamed function
+            llmNavigate.POST("/question", handler.NavigateCodebaseWithLLM) // Renamed function
         }
 
         // LLM operation route

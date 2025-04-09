@@ -1,6 +1,9 @@
 package models
 
-import "github.com/pbearc/github-agent/backend/internal/llm"
+import (
+	"github.com/pbearc/github-agent/backend/internal/llm"
+	"github.com/pbearc/github-agent/backend/internal/types"
+)
 
 // RepositoryRequest contains the request data for repository operations
 type RepositoryRequest struct {
@@ -94,4 +97,14 @@ type SearchItem struct {
 	Path     string `json:"path"`
 	Content  string `json:"content"`
 	HTMLLink string `json:"html_link"`
+}
+
+// PRSummaryRequest contains the request data for PR summary generation
+type PRSummaryRequest struct {
+	URL string `json:"url" binding:"required"`
+}
+
+// PRSummaryResponse represents the response for PR summary generation
+type PRSummaryResponse struct {
+	Summary types.PRSummary `json:"summary"`
 }

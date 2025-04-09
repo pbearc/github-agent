@@ -34,27 +34,50 @@ func (c *Client) GetDirectoryContent(ctx context.Context, owner, repo, path, ref
 
 // GetFileContentText gets the text content of a file in a repository
 func (c *Client) GetFileContentText(ctx context.Context, owner, repo, path, ref string) (*FileContent, error) {
-	fileContent, _, _, err := c.client.Repositories.GetContents(
-		ctx,
-		owner,
-		repo,
-		path,
-		&github.RepositoryContentGetOptions{Ref: ref},
-	)
-	if err != nil {
-		return nil, common.WrapError(err, "failed to get file content")
-	}
-
-	content, err := fileContent.GetContent()
-	if err != nil {
-		return nil, common.WrapError(err, "failed to decode file content")
-	}
-
-	return &FileContent{
-		Path:    *fileContent.Path,
-		Content: content,
-		SHA:     *fileContent.SHA,
-	}, nil
+    fileContent, _, resp, err := c.client.Repositories.GetContents(
+        ctx,
+        owner,
+        repo,
+        path,
+        &github.RepositoryContentGetOptions{Ref: ref},
+    )
+    
+    if err != nil {
+        if resp != nil && resp.StatusCode == 404 {
+            return nil, common.NewError("file not found: " + path)
+        }
+        return nil, common.WrapError(err, "failed to get file content")
+    }
+    
+    // Check if fileContent is nil
+    if fileContent == nil {
+        return nil, common.NewError("received nil content for: " + path)
+    }
+    
+    // Check if required fields are nil
+    if fileContent.Encoding == nil {
+        return nil, common.NewError("encoding is nil for: " + path)
+    }
+    
+    content, err := fileContent.GetContent()
+    if err != nil {
+        return nil, common.WrapError(err, "failed to decode file content")
+    }
+    
+    // Check if required fields for return are nil
+    if fileContent.Path == nil {
+        return nil, common.NewError("path is nil for: " + path)
+    }
+    
+    if fileContent.SHA == nil {
+        return nil, common.NewError("SHA is nil for: " + path)
+    }
+    
+    return &FileContent{
+        Path:    *fileContent.Path,
+        Content: content,
+        SHA:     *fileContent.SHA,
+    }, nil
 }
 
 // CreateReadmeFile creates or updates the README.md file in a repository

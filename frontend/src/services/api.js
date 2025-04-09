@@ -87,6 +87,10 @@ const healthService = {
   check: () => axios.get("/health"),
 };
 
+const prSummaryService = {
+  getSummary: (url) => api.post("/pr/summary", { url }),
+};
+
 export {
   api,
   repositoryService,
@@ -96,4 +100,5 @@ export {
   llmService,
   healthService,
   navigatorService,
+  prSummaryService,
 };

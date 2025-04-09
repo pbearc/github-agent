@@ -4,7 +4,14 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { motion } from "framer-motion";
 
-const FeatureCard = ({ icon, title, description, link, delay = 0 }) => (
+const FeatureCard = ({
+  icon,
+  title,
+  description,
+  link,
+  colorClass = "from-primary-600 to-pink-600",
+  delay = 0,
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -13,28 +20,60 @@ const FeatureCard = ({ icon, title, description, link, delay = 0 }) => (
     whileHover={{ y: -5, transition: { duration: 0.2 } }}
     className="col-span-1"
   >
-    <Card className="h-full">
+    <div className="h-full bg-dark-100 rounded-xl p-6 border border-gray-800 hover:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300">
       <div className="flex flex-col h-full">
         <div className="flex items-center mb-4">
-          <div className="p-2 rounded-md bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">
+          <div
+            className={`p-3 rounded-md bg-gradient-to-br ${colorClass} text-white`}
+          >
             {icon}
           </div>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          {title}
-        </h3>
-        <p className="text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-          {description}
-        </p>
+        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <p className="text-gray-400 mb-4 flex-grow">{description}</p>
         <div className="mt-auto">
           <Link to={link}>
-            <Button variant="outline" fullWidth>
-              Try it now
+            <Button
+              variant="outline"
+              fullWidth
+              className={`border-gray-700 text-gray-300 hover:bg-gradient-to-r ${colorClass} hover:text-white hover:border-transparent`}
+            >
+              Explore Now
             </Button>
           </Link>
         </div>
       </div>
-    </Card>
+    </div>
+  </motion.div>
+);
+
+const StepCard = ({
+  number,
+  icon,
+  title,
+  description,
+  colorClass,
+  delay = 0,
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.5, delay }}
+    className="bg-dark-100 p-8 rounded-xl border border-gray-800 relative"
+  >
+    <div
+      className={`absolute -top-5 -left-5 flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-r ${colorClass} text-white font-bold text-lg`}
+    >
+      {number}
+    </div>
+    <div
+      className={`flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br ${colorClass} bg-opacity-20 text-white mx-auto mb-4`}
+    >
+      {icon}
+    </div>
+    <h3 className="text-xl font-medium text-white text-center mb-3">{title}</h3>
+    <p className="text-gray-400 text-center">{description}</p>
   </motion.div>
 );
 
@@ -63,6 +102,148 @@ const Dashboard = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+      ),
+      title: "Code Search",
+      description:
+        "Search through repositories with natural language questions to find and understand specific code patterns.",
+      link: "/search",
+      colorClass: "from-primary-600 to-secondary-600",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+          />
+        </svg>
+      ),
+      title: "Code Walkthrough",
+      description:
+        "Get guided tours through unfamiliar codebases to quickly understand structure and key components.",
+      link: "/navigate/walkthrough",
+      colorClass: "from-secondary-600 to-pink-600",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+      title: "Function Explainer",
+      description:
+        "Understand specific functions or components with detailed explanations of parameters, return values, and usage patterns.",
+      link: "/navigate/function",
+      colorClass: "from-orange-500 to-pink-600",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+          />
+        </svg>
+      ),
+      title: "Architecture Visualizer",
+      description:
+        "Visualize the architecture of any repository with interactive diagrams showing dependencies and data flows.",
+      link: "/navigate/architecture",
+      colorClass: "from-lime-500 to-primary-600",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+      title: "Codebase Q&A",
+      description:
+        "Ask natural language questions about any codebase and get AI-powered answers with relevant code snippets.",
+      link: "/search",
+      colorClass: "from-pink-600 to-orange-500",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+          />
+        </svg>
+      ),
+      title: "Best Practices Guide",
+      description:
+        "Get custom style guides and best practices based on the patterns used in any codebase to follow team conventions.",
+      link: "/navigate/practices",
+      colorClass: "from-secondary-600 to-primary-600",
+    },
+  ];
+
+  // Helper tools features
+  const helperTools = [
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
@@ -71,6 +252,7 @@ const Dashboard = () => {
       description:
         "Create professional README files for your repositories with a single click.",
       link: "/generate/readme",
+      colorClass: "from-orange-500 to-lime-500",
     },
     {
       icon: (
@@ -93,6 +275,7 @@ const Dashboard = () => {
       description:
         "Automatically create optimized Dockerfiles based on your project structure.",
       link: "/generate/dockerfile",
+      colorClass: "from-pink-600 to-primary-600",
     },
     {
       icon: (
@@ -115,12 +298,17 @@ const Dashboard = () => {
       description:
         "Enhance code readability by adding comprehensive comments to your files.",
       link: "/generate/comments",
+      colorClass: "from-secondary-600 to-lime-500",
     },
+  ];
+
+  const steps = [
     {
+      number: 1,
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
+          className="h-8 w-8"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -129,20 +317,21 @@ const Dashboard = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
           />
         </svg>
       ),
-      title: "Refactor Code",
+      title: "Paste Repository URL",
       description:
-        "Clean up and optimize your code with intelligent refactoring suggestions.",
-      link: "/generate/refactor",
+        "Simply paste the GitHub repository URL you want to explore - no cloning, no setup.",
+      colorClass: "from-primary-600 to-secondary-600",
     },
     {
+      number: 2,
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
+          className="h-8 w-8"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -151,20 +340,21 @@ const Dashboard = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
           />
         </svg>
       ),
-      title: "Code Search",
+      title: "Choose Your Tool",
       description:
-        "Quickly find and explore code in your repositories with powerful search capabilities.",
-      link: "/search",
+        "Select from our arsenal of AI-powered tools designed to help you understand code quickly.",
+      colorClass: "from-orange-500 to-pink-600",
     },
     {
+      number: 3,
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
+          className="h-8 w-8"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -173,370 +363,154 @@ const Dashboard = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+            d="M5 13l4 4L19 7"
           />
         </svg>
       ),
-      title: "Repository Info",
+      title: "Gain Instant Understanding",
       description:
-        "Get detailed information about any GitHub repository with a single click.",
-      link: "/repository",
+        "Get detailed explanations, diagrams, and walkthroughs that accelerate your understanding.",
+      colorClass: "from-lime-500 to-primary-600",
     },
   ];
 
   return (
-    <div className="space-y-24">
+    <div className="space-y-20">
       {/* Hero Section */}
-      <section className="pt-12 md:pt-20 pb-16">
-        <div className="text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.h1
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white"
-          >
-            <span className="block">Enhance your</span>
-            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
-              GitHub repositories
-            </span>
-            <span className="block">with AI</span>
-          </motion.h1>
+      <section className="py-12 md:py-20">
+        <div className="relative z-10 overflow-hidden rounded-3xl bg-gradient-to-br from-dark-100 to-dark-200 border border-gray-800 shadow-2xl">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(209,57,255,0.15),_transparent_40%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(12,188,255,0.15),_transparent_40%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,123,0,0.1),_transparent_30%)]"></div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-6 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300"
-          >
-            GitHub Agent uses AI to automate documentation, analyze code, and
-            enhance your development workflow.
-          </motion.p>
+          {/* Floating decorative elements */}
+          <div className="absolute top-20 right-20 w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-secondary-500 opacity-20 blur-xl animate-float"></div>
+          <div
+            className="absolute bottom-20 left-20 w-20 h-20 rounded-full bg-gradient-to-r from-primary-500 to-lime-500 opacity-20 blur-xl animate-float"
+            style={{ animationDelay: "2s" }}
+          ></div>
+          <div
+            className="absolute top-1/2 left-1/3 w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 opacity-20 blur-xl animate-float"
+            style={{ animationDelay: "1s" }}
+          ></div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center gap-4"
-          >
-            <Link to="/repository">
-              <Button variant="primary" size="lg">
-                Get Started
-              </Button>
-            </Link>
-            <a
-              href="https://github.com/pbearc/github-agent"
-              target="_blank"
-              rel="noopener noreferrer"
+          <div className="relative px-6 py-20 sm:px-12 lg:px-16 text-center">
+            <motion.h1
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mx-auto max-w-4xl text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight"
             >
-              <Button variant="outline" size="lg">
-                View on GitHub
-              </Button>
-            </a>
-          </motion.div>
+              <span className="block text-white">Understand Any</span>
+              <span className="block mt-1 bg-clip-text text-transparent bg-gradient-to-r from-primary-400 via-orange-400 to-pink-400">
+                GitHub Codebase
+              </span>
+              <span className="block mt-1 text-white">In Minutes</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mt-6 mx-auto max-w-2xl text-xl text-gray-400"
+            >
+              Navigate unfamiliar code with confidence. Our AI-powered tools
+              help newcomers quickly understand any repository's structure,
+              patterns, and functionality.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="mt-10 flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link to="/search">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full sm:w-auto px-8 bg-gradient-to-r from-primary-600 via-secondary-600 to-pink-600 hover:from-primary-500 hover:via-secondary-500 hover:to-pink-500 border-none shadow-xl"
+                >
+                  Try Code Search
+                </Button>
+              </Link>
+              <Link to="/navigate/walkthrough">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto px-8 border-gray-700 text-gray-300 hover:bg-gradient-to-r hover:from-orange-600 hover:to-secondary-600 hover:text-white hover:border-transparent"
+                >
+                  Get a Walkthrough
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Product overview section */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Main features section */}
+      <section>
+        <div className="text-center mb-12">
           <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="lg:grid lg:grid-cols-2 lg:gap-16 items-center"
+            transition={{ duration: 0.6 }}
           >
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                What is GitHub Agent?
-              </h2>
-              <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-                GitHub Agent is an AI-powered tool that helps developers improve
-                their GitHub repositories with automated code analysis,
-                documentation, and enhancement.
-              </p>
-              <div className="mt-8 space-y-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 text-white">
-                      <svg
-                        className="h-5 w-5"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      Automatic Documentation
-                    </h3>
-                    <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-                      Generate professional READMEs and Dockerfiles with a
-                      single click, customized to your repository.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 text-white">
-                      <svg
-                        className="h-5 w-5"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      Code Improvements
-                    </h3>
-                    <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-                      Add comments, refactor code, and find bugs with
-                      intelligent AI analysis.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 text-white">
-                      <svg
-                        className="h-5 w-5"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      Streamlined Workflow
-                    </h3>
-                    <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-                      Push changes directly to your repository with no
-                      additional setup.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-10 lg:mt-0 flex justify-center items-center">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="relative rounded-xl bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 shadow-xl overflow-hidden p-8"
-              >
-                <div className="w-full h-full max-w-md rounded-md overflow-hidden shadow-2xl">
-                  <img
-                    className="w-full rounded-t-md"
-                    src="/api/placeholder/600/300"
-                    alt="GitHub Agent Screenshot"
-                  />
-                  <div className="bg-white dark:bg-dark-100 p-5 rounded-b-md">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      AI-Powered Repository Enhancement
-                    </h3>
-                    <p className="mt-2 text-gray-600 dark:text-gray-300">
-                      Transform your repositories with intelligent documentation
-                      and code analysis.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary-500 opacity-20 rounded-full"></div>
-                <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 bg-secondary-500 opacity-20 rounded-full"></div>
-              </motion.div>
-            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Powerful Tools for Code Understanding
+            </h2>
+            <p className="max-w-2xl mx-auto text-gray-400">
+              Explore unfamiliar codebases with confidence using our suite of
+              AI-powered navigation tools
+            </p>
           </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, index) => (
+            <FeatureCard
+              key={feature.title}
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+              link={feature.link}
+              colorClass={feature.colorClass}
+              delay={0.1 * index}
+            />
+          ))}
         </div>
       </section>
 
       {/* How it works section */}
-      <section className="py-12 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <motion.h2
+      <section className="py-16 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-dark-100/80 to-transparent"></div>
+        <div className="relative">
+          <div className="text-center mb-12">
+            <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-3xl font-bold text-gray-900 dark:text-white"
             >
-              How It Works
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-4 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300"
-            >
-              Simple, powerful, and efficient workflow
-            </motion.p>
+              <h2 className="text-3xl font-bold text-white mb-4">
+                How It Works
+              </h2>
+              <p className="max-w-2xl mx-auto text-gray-400">
+                Understand any codebase in three simple steps
+              </p>
+            </motion.div>
           </div>
 
-          <div className="mt-16">
-            <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="text-center"
-              >
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mx-auto">
-                  <svg
-                    className="h-8 w-8"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
-                  1. Connect
-                </h3>
-                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-                  Paste your GitHub repository URL and connect instantly with no
-                  setup required.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="mt-10 lg:mt-0 text-center"
-              >
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mx-auto">
-                  <svg
-                    className="h-8 w-8"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
-                  2. Enhance
-                </h3>
-                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-                  Choose from our suite of AI-powered tools to enhance your
-                  repository's code and documentation.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="mt-10 lg:mt-0 text-center"
-              >
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 mx-auto">
-                  <svg
-                    className="h-8 w-8"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-white">
-                  3. Deploy
-                </h3>
-                <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-                  Review the AI-generated content and push changes directly to
-                  your repository.
-                </p>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features grid section */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <motion.h2
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-3xl font-bold text-gray-900 dark:text-white"
-            >
-              Features
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-4 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300"
-            >
-              Everything you need to optimize your GitHub repositories
-            </motion.p>
-          </div>
-
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <FeatureCard
-                key={feature.title}
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-                link={feature.link}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((step, index) => (
+              <StepCard
+                key={index}
+                number={step.number}
+                icon={step.icon}
+                title={step.title}
+                description={step.description}
+                colorClass={step.colorClass}
                 delay={0.1 * index}
               />
             ))}
@@ -544,105 +518,150 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Recently used repositories section */}
+      {/* Helper tools section */}
+      <section>
+        <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl font-bold text-white mb-4">Helper Tools</h2>
+            <p className="max-w-2xl mx-auto text-gray-400">
+              Additional utilities to help enhance your GitHub repositories
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {helperTools.map((tool, index) => (
+            <FeatureCard
+              key={tool.title}
+              icon={tool.icon}
+              title={tool.title}
+              description={tool.description}
+              link={tool.link}
+              colorClass={tool.colorClass}
+              delay={0.1 * index}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Recently explored repositories section */}
       {recentlyUsed.length > 0 && (
-        <section className="py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section>
+          <div className="text-center mb-8">
             <motion.h2
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-2xl font-bold text-gray-900 dark:text-white mb-8"
+              className="text-2xl font-bold text-white"
             >
-              Recently Used Repositories
+              Recently Explored Repositories
             </motion.h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {recentlyUsed.map((repo, index) => (
-                <motion.div
-                  key={repo.url}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: 0.1 * index }}
-                >
-                  <Card>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                      {repo.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                      {repo.owner}
-                    </p>
-                    <div className="flex space-x-2 mt-2">
-                      <Link to="/repository" state={{ url: repo.url }}>
-                        <Button size="sm" variant="primary">
-                          View Info
-                        </Button>
-                      </Link>
-                      <a
-                        href={repo.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recentlyUsed.map((repo, index) => (
+              <motion.div
+                key={repo.url}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: 0.1 * index }}
+              >
+                <div className="bg-dark-100 rounded-xl p-6 border border-gray-800 hover:border-gray-700 shadow-xl transition-all duration-300">
+                  <h3 className="text-lg font-medium text-white mb-1">
+                    {repo.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">{repo.owner}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link to="/search" state={{ url: repo.url }}>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        className="bg-gradient-to-r from-primary-600 to-secondary-600 border-none"
                       >
-                        <Button size="sm" variant="outline">
-                          Open in GitHub
-                        </Button>
-                      </a>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                        Search Code
+                      </Button>
+                    </Link>
+                    <Link to="/navigate/walkthrough" state={{ url: repo.url }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-gray-700 text-gray-300 hover:bg-gradient-to-r hover:from-orange-600 hover:to-pink-600 hover:text-white hover:border-transparent"
+                      >
+                        Get Walkthrough
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </section>
       )}
 
       {/* CTA section */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="rounded-2xl bg-gradient-to-r from-primary-600 to-secondary-700 shadow-xl overflow-hidden"
-          >
-            <div className="px-6 py-12 sm:px-12 lg:px-16 lg:py-16">
-              <div className="max-w-7xl mx-auto">
-                <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
-                  <div>
-                    <h2 className="text-3xl font-extrabold text-white">
-                      Ready to enhance your GitHub repositories?
-                    </h2>
-                    <p className="mt-4 text-lg text-primary-100 dark:text-primary-200">
-                      Start using GitHub Agent today and experience the power of
-                      AI-assisted development. No account required - just paste
-                      your repository URL and get started.
-                    </p>
-                    <div className="mt-8">
-                      <div className="inline-flex rounded-md shadow">
-                        <Link to="/repository">
-                          <Button variant="white" size="lg">
-                            Get Started Now
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
+      <section className="py-10 my-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl shadow-2xl overflow-hidden border border-gray-800 relative"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-dark-100/80 to-dark-200/90"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(209,57,255,0.2),_transparent_40%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(255,123,0,0.2),_transparent_40%)]"></div>
+
+          {/* Moving gradient background */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 bg-gradient-conic from-primary-500 via-secondary-500 to-pink-500 animate-pulse-slow"></div>
+          </div>
+
+          <div className="relative px-6 py-16 sm:px-12 lg:px-16">
+            <div className="max-w-7xl mx-auto">
+              <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
+                <div>
+                  <h2 className="text-3xl font-extrabold text-white">
+                    Ready to understand any GitHub repository?
+                  </h2>
+                  <p className="mt-4 text-lg text-gray-400">
+                    Stop being intimidated by unfamiliar code. Start exploring
+                    with confidence using our AI-powered navigation tools.
+                  </p>
+                  <div className="mt-8">
+                    <Link to="/search">
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        className="bg-gradient-to-r from-orange-500 via-pink-600 to-secondary-600 hover:from-orange-400 hover:via-pink-500 hover:to-secondary-500 border-none shadow-xl"
+                      >
+                        Try Code Search Now
+                      </Button>
+                    </Link>
                   </div>
-                  <div className="mt-10 lg:mt-0 lg:col-start-2">
-                    <div className="flex justify-center lg:justify-end">
+                </div>
+                <div className="mt-10 lg:mt-0 lg:col-start-2">
+                  <div className="flex justify-center lg:justify-end">
+                    <div className="relative">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg blur-sm opacity-40"></div>
                       <img
-                        className="w-full max-w-md rounded-lg shadow-lg"
+                        className="relative w-full max-w-md rounded-lg shadow-lg"
                         src="/api/placeholder/600/400"
-                        alt="GitHub Agent"
+                        alt="Code Understanding"
                       />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </section>
     </div>
   );

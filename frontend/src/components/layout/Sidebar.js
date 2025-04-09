@@ -20,6 +20,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
             </svg>
           ),
+          color: "from-primary-500 to-lime-500",
         },
         {
           name: "Repository Info",
@@ -38,11 +39,104 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               />
             </svg>
           ),
+          color: "from-orange-500 to-pink-600",
         },
       ],
     },
     {
-      section: "Generate",
+      section: "Code Navigation",
+      items: [
+        {
+          name: "Code Q&A",
+          path: "/search",
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ),
+          color: "from-primary-500 to-secondary-600",
+        },
+        {
+          name: "Code Walkthrough",
+          path: "/navigate/walkthrough",
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+            </svg>
+          ),
+          color: "from-secondary-600 to-pink-600",
+        },
+        {
+          name: "Function Explainer",
+          path: "/navigate/function",
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ),
+          color: "from-orange-500 to-pink-600",
+        },
+        {
+          name: "Architecture Visualizer",
+          path: "/navigate/architecture",
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          ),
+          color: "from-lime-500 to-primary-500",
+        },
+        {
+          name: "Best Practices Guide",
+          path: "/navigate/practices",
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ),
+          color: "from-secondary-600 to-primary-500",
+        },
+      ],
+    },
+    {
+      section: "Helper Tools",
       items: [
         {
           name: "Generate README",
@@ -61,6 +155,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               />
             </svg>
           ),
+          color: "from-orange-500 to-lime-500",
         },
         {
           name: "Generate Dockerfile",
@@ -79,6 +174,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               />
             </svg>
           ),
+          color: "from-pink-600 to-primary-500",
         },
         {
           name: "Add Comments",
@@ -97,6 +193,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               />
             </svg>
           ),
+          color: "from-secondary-600 to-lime-500",
         },
         {
           name: "Refactor Code",
@@ -110,20 +207,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             >
               <path
                 fillRule="evenodd"
-                d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
+                d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
                 clipRule="evenodd"
               />
             </svg>
           ),
+          color: "from-lime-500 to-orange-500",
         },
-      ],
-    },
-    {
-      section: "Search",
-      items: [
         {
-          name: "Code Search",
-          path: "/search",
+          name: "PR Summary",
+          path: "/pr-summary",
           icon: (
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -133,11 +226,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             >
               <path
                 fillRule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"
                 clipRule="evenodd"
               />
             </svg>
           ),
+          color: "from-primary-500 to-secondary-600",
         },
       ],
     },
@@ -161,6 +255,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               />
             </svg>
           ),
+          color: "from-secondary-600 to-pink-600",
         },
       ],
     },
@@ -168,14 +263,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   // Sidebar content
   const SidebarContent = () => (
-    <div className="flex flex-col h-full py-6 overflow-y-auto bg-white dark:bg-dark-100 shadow-xl">
+    <div className="flex flex-col h-full py-6 overflow-y-auto bg-dark-100 dark:bg-dark-100 shadow-xl">
       <div className="flex items-center justify-between px-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Menu
+        <h2 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary-400 via-orange-400 to-pink-400">
+          Code Navigator
         </h2>
         <button
           onClick={toggleSidebar}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+          className="text-gray-400 hover:text-gray-200 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
           aria-label="Close sidebar"
         >
           <svg
@@ -210,13 +305,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 
                     ${
                       isActive
-                        ? "bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-100"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? `bg-gradient-to-r ${item.color} bg-opacity-10 text-white`
+                        : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-800 hover:text-gray-200"
                     }`
                   }
                   onClick={() => toggleSidebar()}
                 >
-                  <span className="mr-3">{item.icon}</span>
+                  <span className={`mr-3 ${`text-white`}`}>{item.icon}</span>
                   {item.name}
                 </NavLink>
               ))}
@@ -225,13 +320,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         ))}
       </div>
 
-      <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="px-6 py-4 border-t border-gray-800 dark:border-gray-700">
         <div className="flex flex-col space-y-4">
           <a
             href="https://github.com/pbearc/github-agent"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
+            className="flex items-center text-gray-400 dark:text-gray-400 hover:text-primary-400 dark:hover:text-primary-400"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -267,7 +362,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       <div className="fixed inset-0 z-20">
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-gray-600 bg-opacity-50 transition-opacity"
+          className="absolute inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity"
           onClick={toggleSidebar}
         />
 

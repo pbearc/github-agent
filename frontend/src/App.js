@@ -16,6 +16,10 @@ import CodeComments from "./pages/CodeComments";
 import CodeRefactor from "./pages/CodeRefactor";
 import CodeSearch from "./pages/CodeSearch";
 import Settings from "./pages/Settings";
+import PRSummary from "./pages/PRSummary";
+import CodeWalkthrough from "./pages/CodeWalkthrough";
+import FunctionExplainer from "./pages/FunctionExplainer";
+import ArchitectureAndPractices from "./pages/ArchitectureAndPractices";
 
 // Context
 import { ThemeProvider } from "./context/ThemeContext";
@@ -30,7 +34,7 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
-        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-dark-200 transition-colors duration-300">
+        <div className="flex flex-col min-h-screen bg-gray-900 dark:bg-dark-200 transition-colors duration-300">
           <Navbar toggleSidebar={toggleSidebar} />
 
           <div className="flex flex-1 relative">
@@ -38,6 +42,27 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/repository" element={<RepositoryInfo />} />
+
+                {/* Code understanding routes */}
+                <Route path="/search" element={<CodeSearch />} />
+                <Route
+                  path="/navigate/walkthrough"
+                  element={<CodeWalkthrough />}
+                />
+                <Route
+                  path="/navigate/function"
+                  element={<FunctionExplainer />}
+                />
+                <Route
+                  path="/navigate/architecture"
+                  element={<ArchitectureAndPractices />}
+                />
+                <Route
+                  path="/navigate/practices"
+                  element={<ArchitectureAndPractices />}
+                />
+
+                {/* Helper functionality routes */}
                 <Route path="/generate/readme" element={<GenerateReadme />} />
                 <Route
                   path="/generate/dockerfile"
@@ -45,7 +70,7 @@ function App() {
                 />
                 <Route path="/generate/comments" element={<CodeComments />} />
                 <Route path="/generate/refactor" element={<CodeRefactor />} />
-                <Route path="/search" element={<CodeSearch />} />
+                <Route path="/pr-summary" element={<PRSummary />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </main>

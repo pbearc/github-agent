@@ -123,3 +123,33 @@ func (c *GeminiClient) CreateEmbedding(ctx context.Context, text string) ([]floa
 func (c *GeminiClient) GetEmbeddingDimension() int {
 	return 768 // Gemini embeddings are 768 dimensions
 }
+
+// GenerateCodeWalkthrough generates a code walkthrough
+func (c *GeminiClient) GenerateCodeWalkthrough(ctx context.Context, repoInfo map[string]interface{}, codebase map[string]string, entryPoints []string) (string, error) {
+	prompt := buildCodeWalkthroughPrompt(repoInfo, codebase, entryPoints)
+	return c.GenerateText(ctx, prompt)
+}
+
+// ExplainFunction generates an explanation for a function
+func (c *GeminiClient) ExplainFunction(ctx context.Context, functionCode string, language string, fileName string) (string, error) {
+	prompt := buildFunctionExplainerPrompt(functionCode, language, fileName)
+	return c.GenerateText(ctx, prompt)
+}
+
+// VisualizeArchitecture generates an architecture visualization
+func (c *GeminiClient) VisualizeArchitecture(ctx context.Context, repoInfo map[string]interface{}, fileStructure string, importMap map[string][]string) (string, error) {
+	prompt := buildArchitectureVisualizerPrompt(repoInfo, fileStructure, importMap)
+	return c.GenerateText(ctx, prompt)
+}
+
+// AnswerCodebaseQuestion answers a question about the codebase
+func (c *GeminiClient) AnswerCodebaseQuestion(ctx context.Context, question string, relevantCode map[string]string) (string, error) {
+	prompt := buildCodebaseQAPrompt(question, relevantCode)
+	return c.GenerateText(ctx, prompt)
+}
+
+// GenerateBestPracticesGuide generates a best practices guide
+func (c *GeminiClient) GenerateBestPracticesGuide(ctx context.Context, repoInfo map[string]interface{}, codebase map[string]string) (string, error) {
+	prompt := buildBestPracticesPrompt(repoInfo, codebase)
+	return c.GenerateText(ctx, prompt)
+}

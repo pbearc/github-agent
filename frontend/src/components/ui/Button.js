@@ -1,57 +1,78 @@
 import React from "react";
-
-const variants = {
-  primary:
-    "bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500",
-  secondary:
-    "bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white focus:ring-gray-500",
-  danger: "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500",
-  success: "bg-green-600 hover:bg-green-700 text-white focus:ring-green-500",
-  outline:
-    "bg-transparent border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-white focus:ring-gray-500",
-  ghost:
-    "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-white focus:ring-gray-500",
-  white:
-    "bg-white hover:bg-gray-100 text-primary-600 border border-transparent focus:ring-white",
-};
-
-const sizes = {
-  xs: "px-2 py-1 text-xs",
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2 text-sm",
-  lg: "px-5 py-2.5 text-base",
-  xl: "px-6 py-3 text-lg",
-};
+import PropTypes from "prop-types";
 
 const Button = ({
   children,
+  type = "button",
   variant = "primary",
   size = "md",
-  className = "",
-  disabled = false,
-  isLoading = false,
   fullWidth = false,
-  icon = null,
-  iconPosition = "left",
+  isLoading = false,
+  disabled = false,
+  onClick,
+  className = "",
   ...props
 }) => {
+  const baseStyles =
+    "inline-flex items-center justify-center font-medium rounded-md focus:outline-none transition-all duration-200";
+
+  const sizeStyles = {
+    xs: "px-2 py-1 text-xs",
+    sm: "px-3 py-1.5 text-sm",
+    md: "px-4 py-2 text-base",
+    lg: "px-6 py-3 text-lg",
+  };
+
+  const variantStyles = {
+    primary:
+      "bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-500 hover:to-secondary-500 shadow-lg",
+    secondary:
+      "bg-gradient-to-r from-secondary-600 to-pink-600 text-white hover:from-secondary-500 hover:to-pink-500 shadow-lg",
+    accent:
+      "bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:from-orange-400 hover:to-pink-500 shadow-lg",
+    success:
+      "bg-gradient-to-r from-lime-600 to-primary-600 text-white hover:from-lime-500 hover:to-primary-500 shadow-lg",
+    outline:
+      "bg-transparent border border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800",
+    white: "bg-white text-gray-900 hover:bg-gray-100 shadow-lg",
+    danger:
+      "bg-gradient-to-r from-pink-600 to-orange-600 text-white hover:from-pink-500 hover:to-orange-500 shadow-lg",
+  };
+
+  const disabledStyles = "opacity-50 cursor-not-allowed";
+  const loadingStyles = "cursor-wait";
+  const fullWidthStyles = "w-full";
+
+  let combinedStyles = `${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]}`;
+
+  if (disabled) {
+    combinedStyles += ` ${disabledStyles}`;
+  }
+
+  if (isLoading) {
+    combinedStyles += ` ${loadingStyles}`;
+  }
+
+  if (fullWidth) {
+    combinedStyles += ` ${fullWidthStyles}`;
+  }
+
+  // Apply custom className at the end to allow overrides
+  if (className) {
+    combinedStyles += ` ${className}`;
+  }
+
   return (
     <button
-      className={`
-        inline-flex items-center justify-center rounded-md 
-        transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
-        ${variants[variant] || variants.primary}
-        ${sizes[size] || sizes.md}
-        ${fullWidth ? "w-full" : ""}
-        ${disabled || isLoading ? "opacity-60 cursor-not-allowed" : ""}
-        ${className}
-      `}
+      type={type}
+      className={combinedStyles}
+      onClick={onClick}
       disabled={disabled || isLoading}
       {...props}
     >
       {isLoading && (
         <svg
-          className="animate-spin -ml-1 mr-2 h-4 w-4"
+          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -71,18 +92,29 @@ const Button = ({
           ></path>
         </svg>
       )}
-
-      {icon && iconPosition === "left" && !isLoading && (
-        <span className="mr-2">{icon}</span>
-      )}
-
       {children}
-
-      {icon && iconPosition === "right" && !isLoading && (
-        <span className="ml-2">{icon}</span>
-      )}
     </button>
   );
+};
+
+Button.propTypes = {
+  children: PropTypes.node.isRequired,
+  type: PropTypes.oneOf(["button", "submit", "reset"]),
+  variant: PropTypes.oneOf([
+    "primary",
+    "secondary",
+    "accent",
+    "success",
+    "outline",
+    "white",
+    "danger",
+  ]),
+  size: PropTypes.oneOf(["xs", "sm", "md", "lg"]),
+  fullWidth: PropTypes.bool,
+  isLoading: PropTypes.bool,
+  disabled: PropTypes.bool,
+  onClick: PropTypes.func,
+  className: PropTypes.string,
 };
 
 export default Button;
