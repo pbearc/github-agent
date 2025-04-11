@@ -69,6 +69,41 @@ const navigatorService = {
 
   question: (url, question, branch = "", topK = 5) =>
     api.post("/navigate/question", { url, question, branch, top_k: topK }),
+
+  // Add these new methods
+  visualizeArchitecture: (url, branch, detailLevel, focusPaths) =>
+    api.post("/navigate/architecture", {
+      url,
+      branch,
+      detail: detailLevel, // Note: parameter name is "detail" not "detail_level"
+      focus_paths: focusPaths,
+    }),
+
+  generateWalkthrough: (
+    url,
+    branch,
+    depth = 3,
+    entryPoint = "",
+    focusPaths = []
+  ) =>
+    api.post("/navigate/walkthrough", {
+      url,
+      branch,
+      depth,
+      entry_point: entryPoint,
+      focus_paths: focusPaths,
+    }),
+
+  getBestPractices: (url, branch, scope, scopePath) =>
+    api.post("/navigate/practices", {
+      url,
+      branch,
+      scope,
+      path: scopePath, // Note: parameter name is "path" not "scope_path"
+    }),
+
+  getArchitectureGraph: (url, branch) =>
+    api.post("/navigate/architecture-graph", { url, branch }),
 };
 
 // Push endpoints

@@ -7,10 +7,33 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pbearc/github-agent/backend/internal/config"
 	"github.com/pbearc/github-agent/backend/internal/github"
+	"github.com/pbearc/github-agent/backend/internal/graph"
+	"github.com/pbearc/github-agent/backend/internal/llm"
 	"github.com/pbearc/github-agent/backend/internal/models"
 	"github.com/pbearc/github-agent/backend/internal/services"
+	"github.com/pbearc/github-agent/backend/pkg/common"
 )
+
+type Handler struct {
+    GithubClient *github.Client
+    LLMClient    *llm.GeminiClient
+    Neo4jClient  *graph.Neo4jClient
+    Config       *config.Config
+    Logger       *common.Logger
+}
+
+// NewHandler creates a new Handler instance
+func NewHandler(githubClient *github.Client, llmClient *llm.GeminiClient, neo4jClient *graph.Neo4jClient, cfg *config.Config) *Handler {
+    return &Handler{
+        GithubClient: githubClient,
+        LLMClient:    llmClient,
+        Neo4jClient:  neo4jClient,
+        Config:       cfg,
+        Logger:       common.NewLogger(),
+    }
+}
 
 // IndexCodebase handles codebase indexing requests
 func (h *Handler) IndexCodebaseForNavigation(c *gin.Context) {
@@ -58,7 +81,7 @@ func (h *Handler) IndexCodebaseForNavigation(c *gin.Context) {
     }
 
     // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient)
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
     // Generate default walkthrough
     walkthrough, err := navigationService.GenerateCodeWalkthrough(
@@ -141,7 +164,7 @@ func (h *Handler) NavigateCodebaseWithLLM(c *gin.Context) {
     defer cancel()
 
     // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient)
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
     // Get answer to the question
     answer, err := navigationService.AnswerCodebaseQuestion(
@@ -188,7 +211,7 @@ func (h *Handler) GenerateCodeWalkthrough(c *gin.Context) {
     defer cancel()
 
     // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient)
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
     // Generate code walkthrough
     walkthrough, err := navigationService.GenerateCodeWalkthrough(
@@ -237,7 +260,7 @@ func (h *Handler) ExplainFunction(c *gin.Context) {
     defer cancel()
 
     // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient)
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
     // Generate function explanation
     explanation, err := navigationService.ExplainFunction(
@@ -259,6 +282,66 @@ func (h *Handler) ExplainFunction(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, explanation)
+}
+
+// GetArchitectureGraph handles architecture graph data requests
+func (h *Handler) GetArchitectureGraph(c *gin.Context) {
+    var req models.RepositoryRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, models.ErrorResponse{
+            Error: "Invalid request",
+            Details: err.Error(),
+        })
+        return
+    }
+
+    // Parse the GitHub URL
+    owner, repo, err := github.ParseRepoURL(req.URL)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, models.ErrorResponse{
+            Error: "Invalid GitHub URL",
+            Details: err.Error(),
+        })
+        return
+    }
+
+    // Check if Neo4j client is available
+    if h.Neo4jClient == nil {
+        c.JSON(http.StatusServiceUnavailable, models.ErrorResponse{
+            Error: "Neo4j service not available",
+            Details: "The Neo4j database is not configured or not accessible",
+        })
+        return
+    }
+
+    // Set a timeout for the GitHub API request
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
+    defer cancel()
+
+    // Create the navigation service
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
+    
+    // Store the codebase structure in Neo4j
+    err = navigationService.StoreCodebaseInNeo4j(ctx, owner, repo, req.Branch)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+            Error: "Failed to store codebase structure",
+            Details: err.Error(),
+        })
+        return
+    }
+
+    // Get graph data
+    graphData, err := h.Neo4jClient.GetCodebaseGraph(ctx, owner, repo, req.Branch)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+            Error: "Failed to get architecture graph",
+            Details: err.Error(),
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, graphData)
 }
 
 // VisualizeArchitecture handles architecture visualization requests
@@ -287,7 +370,7 @@ func (h *Handler) VisualizeArchitecture(c *gin.Context) {
     defer cancel()
 
     // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient)
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
     // Generate architecture visualization
     architecture, err := navigationService.VisualizeArchitecture(
@@ -335,7 +418,7 @@ func (h *Handler) GenerateBestPracticesGuide(c *gin.Context) {
     defer cancel()
 
     // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient)
+    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
     // Generate best practices guide
     bestPractices, err := navigationService.GenerateBestPracticesGuide(

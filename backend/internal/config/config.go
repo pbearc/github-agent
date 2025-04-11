@@ -25,6 +25,11 @@ type Config struct {
 	PineconeAPIKey      string
 	PineconeEnvironment string
 	PineconeIndexName   string
+	
+	// Neo4j configuration
+	Neo4jURI      string
+	Neo4jUsername string
+	Neo4jPassword string
 }
 
 // New creates a new Config instance from environment variables
@@ -59,6 +64,9 @@ func New() (*Config, error) {
 		PineconeAPIKey:      pineconeAPIKey,
 		PineconeEnvironment: getEnvOrDefault("PINECONE_ENVIRONMENT", "gcp-starter"),
 		PineconeIndexName:   getEnvOrDefault("PINECONE_INDEX_NAME", "github-agent"),
+		Neo4jURI:            getEnvOrDefault("NEO4J_URI", "bolt://localhost:7687"),
+		Neo4jUsername:       getEnvOrDefault("NEO4J_USERNAME", "neo4j"),
+		Neo4jPassword:       getEnvOrDefault("NEO4J_PASSWORD", "password"),
 	}, nil
 }
 

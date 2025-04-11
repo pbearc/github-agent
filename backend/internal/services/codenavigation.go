@@ -4,10 +4,14 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/pbearc/github-agent/backend/internal/github"
+	"github.com/pbearc/github-agent/backend/internal/graph"
 	"github.com/pbearc/github-agent/backend/internal/llm"
 	"github.com/pbearc/github-agent/backend/internal/models"
 	"github.com/pbearc/github-agent/backend/pkg/common"
@@ -15,19 +19,22 @@ import (
 
 // CodeNavigationService handles code navigation features
 type CodeNavigationService struct {
-	githubClient *github.Client
-	llmClient    *llm.GeminiClient
-	logger       *common.Logger
+    githubClient *github.Client
+    llmClient    *llm.GeminiClient
+    neo4jClient  *graph.Neo4jClient
+    logger       *common.Logger
 }
 
 // NewCodeNavigationService creates a new CodeNavigationService instance
-func NewCodeNavigationService(githubClient *github.Client, llmClient *llm.GeminiClient) *CodeNavigationService {
-	return &CodeNavigationService{
-		githubClient: githubClient,
-		llmClient:    llmClient,
-		logger:       common.NewLogger(),
-	}
+func NewCodeNavigationService(githubClient *github.Client, llmClient *llm.GeminiClient, neo4jClient *graph.Neo4jClient) *CodeNavigationService {
+    return &CodeNavigationService{
+        githubClient: githubClient,
+        llmClient:    llmClient,
+        neo4jClient:  neo4jClient,
+        logger:       common.NewLogger(),
+    }
 }
+
 
 // GenerateCodeWalkthrough generates a code walkthrough for a repository
 func (s *CodeNavigationService) GenerateCodeWalkthrough(ctx context.Context, owner, repo, branch string, depth int, focusPath string, entryPoints []string) (*models.CodeWalkthroughResponse, error) {
@@ -189,59 +196,687 @@ func (s *CodeNavigationService) ExplainFunction(ctx context.Context, owner, repo
     return &explanation, nil
 }
 
-// VisualizeArchitecture generates an architecture visualization
-func (s *CodeNavigationService) VisualizeArchitecture(ctx context.Context, owner, repo, branch, detail string, focusPaths []string) (*models.ArchitectureVisualizerResponse, error) {
+// Fix for StoreCodebaseInNeo4j method in services/codenavigation.go
+
+// StoreCodebaseInNeo4j stores the codebase structure in Neo4j
+func (s *CodeNavigationService) StoreCodebaseInNeo4j(ctx context.Context, owner, repo, branch string) error {
+    s.logger.Info(fmt.Sprintf("Starting StoreCodebaseInNeo4j for %s/%s @ %s", owner, repo, branch))
+    
+    // If Neo4j client is not available, just return
+    if s.neo4jClient == nil {
+        return nil
+    }
+    
     // Get repository info
     repoInfo, err := s.githubClient.GetRepositoryInfo(ctx, owner, repo)
     if err != nil {
-        return nil, common.WrapError(err, "failed to get repository info")
+        return common.WrapError(err, "failed to get repository info")
     }
 
     // If branch is not specified, use the default branch
     if branch == "" {
         branch = repoInfo.DefaultBranch
+        s.logger.Info(fmt.Sprintf("Using default branch: %s", branch))
     }
-
-    // Get the file structure
-    fileStructure, err := s.githubClient.GetRepositoryStructure(ctx, owner, repo, branch)
+    
+    // Step 1: Get all files from the repository
+    files, err := s.githubClient.GetAllFiles(ctx, owner, repo, branch)
     if err != nil {
-        return nil, common.WrapError(err, "failed to get repository structure")
+        return common.WrapError(err, "failed to get all files")
     }
-
-    // Get import relationships
+    
+    s.logger.Info(fmt.Sprintf("Found %d files/directories in repository", len(files)))
+    
+    // Step 2: Get import relationships between files
     importMap, err := s.githubClient.GetImportMap(ctx, owner, repo, branch)
     if err != nil {
-        s.logger.WithField("error", err).Warning("Failed to get import map")
+        s.logger.WithError(err).Warning("Failed to get import map, continuing with file structure only")
+        // Continue with empty import map rather than failing completely
         importMap = make(map[string][]string)
     }
-
-    // Convert repository info to a map for the LLM
-    repoInfoMap := map[string]interface{}{
-        "owner":          repoInfo.Owner,
-        "name":           repoInfo.Name,
-        "description":    repoInfo.Description,
-        "default_branch": repoInfo.DefaultBranch,
-        "url":            repoInfo.URL,
-        "language":       repoInfo.Language,
-        "stars":          repoInfo.Stars,
-        "forks":          repoInfo.Forks,
-    }
-
-    // Generate architecture visualization using LLM
-    architectureJSON, err := s.llmClient.VisualizeArchitecture(ctx, repoInfoMap, fileStructure, importMap)
+    
+    s.logger.Info(fmt.Sprintf("Found %d files with import relationships", len(importMap)))
+    
+    // Step 3: Store in Neo4j
+    // Check the method signature in Neo4jClient
+    err = s.neo4jClient.StoreCodebaseStructure(ctx, owner, repo, branch, files, importMap)
     if err != nil {
-        return nil, common.WrapError(err, "failed to visualize architecture")
+        return common.WrapError(err, "failed to store codebase structure in Neo4j")
     }
+    
+    s.logger.Info(fmt.Sprintf("Successfully stored codebase structure for %s/%s@%s in Neo4j", owner, repo, branch))
+    return nil
+}
 
-    // Parse the JSON response
-    var architecture models.ArchitectureVisualizerResponse
-    err = json.Unmarshal([]byte(architectureJSON), &architecture)
+// VisualizeArchitecture generates an architecture visualization
+func (s *CodeNavigationService) VisualizeArchitecture(
+    ctx context.Context,
+    owner, repo, branch string,
+    detail string,
+    focusPaths []string,
+) (*models.ArchitectureVisualizerResponse, error) {
+    // Get codebase graph from Neo4j
+    graphData, err := s.neo4jClient.GetCodebaseGraph(ctx, owner, repo, branch)
     if err != nil {
-        // If JSON parsing fails, try to structure the text response
-        architecture = s.structureArchitectureVisualization(architectureJSON)
+        // If Neo4j fails, try to generate a basic visualization without it
+        s.logger.WithError(err).Warning("Failed to get codebase graph from Neo4j, attempting fallback visualization")
+        return s.generateFallbackVisualization(ctx, owner, repo, branch, detail, focusPaths)
     }
+    
+    // Convert graph data to diagram data
+    diagramData := s.convertToDiagramData(graphData, detail, focusPaths)
+    
+    // Generate component descriptions
+    componentDescriptions := make(map[string]string)
+    
+    // For components that appear to be important (based on connections), generate descriptions
+    importantNodes := s.findImportantNodes(diagramData)
+    
+    for _, node := range importantNodes {
+        if node.Type == "file" {
+            // Get file content
+            fileContent, err := s.githubClient.GetFileContentText(ctx, owner, repo, node.ID, branch)
+            if err != nil {
+                s.logger.WithError(err).Warning(fmt.Sprintf("Failed to get content for %s", node.ID))
+                continue
+            }
+            
+            // Generate description using LLM
+            description, err := s.generateComponentDescription(ctx, node.ID, fileContent.Content)
+            if err != nil {
+                s.logger.WithError(err).Warning(fmt.Sprintf("Failed to generate description for %s", node.ID))
+                continue
+            }
+            
+            componentDescriptions[node.ID] = description
+        }
+    }
+    
+    // Generate overview
+    overview, err := s.generateArchitectureOverview(ctx, owner, repo, branch, diagramData)
+    if err != nil {
+        s.logger.WithError(err).Warning("Failed to generate architecture overview")
+        overview = "This is a visualization of the codebase architecture showing key components and their relationships."
+    }
+    
+    return &models.ArchitectureVisualizerResponse{
+        Overview:               overview,
+        DiagramData:            diagramData,
+        ComponentDescriptions:  componentDescriptions,
+    }, nil
+}
 
-    return &architecture, nil
+// Helper function to convert graph data to diagram data
+func (s *CodeNavigationService) convertToDiagramData(graphData map[string]interface{}, detail string, focusPaths []string) models.DiagramData {
+    nodes := []models.DiagramNode{}
+    edges := []models.DiagramEdge{}
+    
+    // Create a map of node IDs to indices
+    nodeMap := make(map[string]int)
+    
+    // Process nodes
+    graphNodes, ok := graphData["nodes"].([]map[string]interface{})
+    if ok {
+        for i, node := range graphNodes {
+            // Skip if not a focus path when focus paths are specified
+            if len(focusPaths) > 0 {
+                matched := false
+                for _, focusPath := range focusPaths {
+                    if strings.HasPrefix(node["path"].(string), focusPath) {
+                        matched = true
+                        break
+                    }
+                }
+                if !matched {
+                    continue
+                }
+            }
+            
+            // Determine node type and category
+            nodeType := node["type"].(string)
+            category := "other"
+            layer := "unknown"
+            technology := "unknown"
+            
+            path := node["path"].(string)
+            ext := filepath.Ext(path)
+            
+            // Set technology based on file extension
+            switch ext {
+            case ".go":
+                technology = "Go"
+                category = "backend"
+                layer = "backend"
+            case ".js", ".jsx", ".ts", ".tsx":
+                technology = "JavaScript/TypeScript"
+                category = "frontend"
+                layer = "frontend"
+            case ".css", ".scss", ".sass", ".less":
+                technology = "CSS"
+                category = "frontend"
+                layer = "frontend"
+            case ".html":
+                technology = "HTML"
+                category = "frontend"
+                layer = "frontend"
+            case ".sql":
+                technology = "SQL"
+                category = "database"
+                layer = "database"
+            case ".md":
+                technology = "Markdown"
+                category = "documentation"
+                layer = "documentation"
+            }
+            
+            // Special cases
+            if nodeType == "directory" {
+                category = "module"
+                layer = "module"
+                
+                // Try to infer directory purpose
+                dirName := filepath.Base(path)
+                switch strings.ToLower(dirName) {
+                case "model", "models":
+                    category = "data"
+                    layer = "data"
+                case "controller", "controllers", "handlers":
+                    category = "controller"
+                    layer = "controller"
+                case "view", "views", "templates":
+                    category = "view"
+                    layer = "frontend"
+                case "config", "conf":
+                    category = "configuration"
+                    layer = "configuration"
+                case "middleware", "middlewares":
+                    category = "middleware"
+                    layer = "middleware"
+                case "service", "services":
+                    category = "service"
+                    layer = "service"
+                case "util", "utils", "helper", "helpers":
+                    category = "utility"
+                    layer = "utility"
+                case "test", "tests":
+                    category = "test"
+                    layer = "test"
+                }
+            }
+            
+            // Set size based on importance
+            size := 5
+            if nodeType == "directory" {
+                size = 7
+            }
+            
+            // Add the node
+            diagramNode := models.DiagramNode{
+                ID:        path,
+                Label:     node["label"].(string),
+                Type:      nodeType,
+                Size:      size,
+                Category:  category,
+                Layer:     layer,
+                Technology: technology,
+                Metadata: make(map[string]string),
+            }
+            
+            nodes = append(nodes, diagramNode)
+            nodeMap[path] = i
+        }
+    }
+    
+    // Process relationships
+    graphRelationships, ok := graphData["relationships"].([]map[string]interface{})
+    if ok {
+        for _, rel := range graphRelationships {
+            source := rel["source"].(string)
+            targets, ok := rel["targets"].([]map[string]interface{})
+            
+            if !ok || len(targets) == 0 {
+                continue
+            }
+            
+            // Skip source nodes that weren't included due to focus path filtering
+            if _, exists := nodeMap[source]; !exists {
+                continue
+            }
+            
+            for _, target := range targets {
+                // Skip null targets
+                targetPath, ok := target["target"].(string)
+                if !ok || targetPath == "" {
+                    continue
+                }
+                
+                // Skip target nodes that weren't included due to focus path filtering
+                if _, exists := nodeMap[targetPath]; !exists {
+                    continue
+                }
+                
+                relType, ok := target["type"].(string)
+                if !ok || relType == "" {
+                    relType = "related_to"
+                }
+                
+                // Add the edge
+                edge := models.DiagramEdge{
+                    Source:     source,
+                    Target:     targetPath,
+                    Type:       relType,
+                    Weight:     1,
+                    Label:      relType,
+                    Bidirectional: false,
+                    Metadata:   make(map[string]string),
+                }
+                
+                edges = append(edges, edge)
+            }
+        }
+    }
+    
+    // Filter based on detail level
+    if detail != "high" {
+        // For medium or low detail, limit the number of nodes and edges
+        maxNodes := 100
+        if detail == "low" {
+            maxNodes = 30
+        }
+        
+        // If we have too many nodes, keep only the most important ones
+        if len(nodes) > maxNodes {
+            // Sort nodes by importance (size, connections, etc.)
+            // This is a simplified version - you may want to use a more sophisticated algorithm
+            nodeImportance := make(map[string]int)
+            
+            // Count edges for each node
+            for _, edge := range edges {
+                nodeImportance[edge.Source]++
+                nodeImportance[edge.Target]++
+            }
+            
+            // Adjust importance based on node type
+            for i, node := range nodes {
+                baseImportance := nodeImportance[node.ID]
+                
+                // Directories and important files get a boost
+                if node.Type == "directory" {
+                    baseImportance += 10
+                }
+                
+                // Specific important files get a boost
+                if strings.Contains(node.ID, "main.go") || 
+                   strings.Contains(node.ID, "index.js") ||
+                   strings.Contains(node.ID, "app.js") ||
+                   strings.Contains(node.ID, "server.js") {
+                    baseImportance += 5
+                }
+                
+                nodes[i].Size = baseImportance + 1 // Ensure at least size 1
+            }
+            
+            // Sort nodes by importance
+            sort.Slice(nodes, func(i, j int) bool {
+                return nodes[i].Size > nodes[j].Size
+            })
+            
+            // Keep only the most important nodes
+            keptNodeIDs := make(map[string]bool)
+            if len(nodes) > maxNodes {
+                nodes = nodes[:maxNodes]
+            }
+            
+            // Update the kept node IDs map
+            for _, node := range nodes {
+                keptNodeIDs[node.ID] = true
+            }
+            
+            // Filter edges to only include connections between kept nodes
+            filteredEdges := []models.DiagramEdge{}
+            for _, edge := range edges {
+                if keptNodeIDs[edge.Source] && keptNodeIDs[edge.Target] {
+                    filteredEdges = append(filteredEdges, edge)
+                }
+            }
+            edges = filteredEdges
+        }
+    }
+    
+    return models.DiagramData{
+        Nodes: nodes,
+        Edges: edges,
+    }
+}
+
+// findImportantNodes identifies important nodes based on connections
+func (s *CodeNavigationService) findImportantNodes(diagramData models.DiagramData) []models.DiagramNode {
+    // Count connections for each node
+    connections := make(map[string]int)
+    
+    for _, edge := range diagramData.Edges {
+        connections[edge.Source]++
+        connections[edge.Target]++
+    }
+    
+    // Find nodes with many connections
+    var importantNodes []models.DiagramNode
+    
+    for _, node := range diagramData.Nodes {
+        // If it has more than 2 connections or is a directory, consider it important
+        if connections[node.ID] > 2 || node.Type == "directory" {
+            importantNodes = append(importantNodes, node)
+        }
+    }
+    
+    return importantNodes
+}
+
+// generateComponentDescription generates a description for a component using LLM
+func (s *CodeNavigationService) generateComponentDescription(ctx context.Context, path, content string) (string, error) {
+    // Use a simple prompt for now
+    prompt := fmt.Sprintf("Provide a brief (2-3 sentences max) description of this file's purpose in the codebase: %s\n\nFile content:\n%s", path, content)
+    
+    // Truncate content if too long
+    if len(prompt) > 2000 {
+        prompt = prompt[:2000] + "...[content truncated]"
+    }
+    
+    // Generate description using LLM
+    description, err := s.llmClient.GenerateCompletion(ctx, prompt, 0.7, 100)
+    if err != nil {
+        return "", err
+    }
+    
+    return description, nil
+}
+
+// generateArchitectureOverview generates an overview of the architecture using LLM
+func (s *CodeNavigationService) generateArchitectureOverview(ctx context.Context, owner, repo, branch string, diagramData models.DiagramData) (string, error) {
+    // Create a summary of the architecture
+    var sb strings.Builder
+    
+    sb.WriteString(fmt.Sprintf("Generate a brief overview (3-5 sentences) of the architecture for the repository %s/%s.\n\n", owner, repo))
+    
+    // Add information about key components
+    sb.WriteString("Key components:\n")
+    
+    // Focus on directories first
+    for _, node := range diagramData.Nodes {
+        if node.Type == "directory" {
+            sb.WriteString(fmt.Sprintf("- %s (%s)\n", node.Label, node.Layer))
+        }
+    }
+    
+    // Add important files
+    sb.WriteString("\nKey files:\n")
+    for _, node := range diagramData.Nodes {
+        if node.Type == "file" && node.Size > 5 {
+            sb.WriteString(fmt.Sprintf("- %s (%s)\n", node.ID, node.Technology))
+        }
+    }
+    
+    // Add information about relationships
+    sb.WriteString("\nRelationships:\n")
+    sb.WriteString(fmt.Sprintf("- Total files: %d\n", countNodesByType(diagramData.Nodes, "file")))
+    sb.WriteString(fmt.Sprintf("- Total directories: %d\n", countNodesByType(diagramData.Nodes, "directory")))
+    sb.WriteString(fmt.Sprintf("- Total connections: %d\n", len(diagramData.Edges)))
+    
+    // Generate description using LLM
+    prompt := sb.String()
+    
+    // Truncate if too long
+    if len(prompt) > 3000 {
+        prompt = prompt[:3000] + "...[truncated]"
+    }
+    
+    overview, err := s.llmClient.GenerateCompletion(ctx, prompt, 0.7, 200)
+    if err != nil {
+        return "", err
+    }
+    
+    return overview, nil
+}
+
+// Helper function to count nodes by type
+func countNodesByType(nodes []models.DiagramNode, nodeType string) int {
+    count := 0
+    for _, node := range nodes {
+        if node.Type == nodeType {
+            count++
+        }
+    }
+    return count
+}
+
+// generateFallbackVisualization creates a basic visualization when Neo4j is unavailable
+func (s *CodeNavigationService) generateFallbackVisualization(
+    ctx context.Context, 
+    owner, repo, branch string,
+    detail string,
+    focusPaths []string,
+) (*models.ArchitectureVisualizerResponse, error) {
+    // Get all files
+    files, err := s.githubClient.GetAllFiles(ctx, owner, repo, branch)
+    if err != nil {
+        return nil, err
+    }
+    
+    // Create nodes for each file and directory
+    nodes := []models.DiagramNode{}
+    
+    // Track unique directories
+    directories := make(map[string]bool)
+    
+    for _, file := range files {
+        // Skip files that don't match focus paths if specified
+        if len(focusPaths) > 0 {
+            matched := false
+            for _, focusPath := range focusPaths {
+                if strings.HasPrefix(file.Path, focusPath) {
+                    matched = true
+                    break
+                }
+            }
+            if !matched {
+                continue
+            }
+        }
+        
+        // Add file node
+        if file.Type == "file" {
+            ext := filepath.Ext(file.Path)
+            
+            category := "other"
+            layer := "unknown"
+            technology := "unknown"
+            
+            // Set technology based on file extension
+            switch ext {
+            case ".go":
+                technology = "Go"
+                category = "backend"
+                layer = "backend"
+            case ".js", ".jsx", ".ts", ".tsx":
+                technology = "JavaScript/TypeScript"
+                category = "frontend"
+                layer = "frontend"
+            case ".css", ".scss", ".sass", ".less":
+                technology = "CSS"
+                category = "frontend"
+                layer = "frontend"
+            case ".html":
+                technology = "HTML"
+                category = "frontend"
+                layer = "frontend"
+            case ".sql":
+                technology = "SQL"
+                category = "database"
+                layer = "database"
+            case ".md":
+                technology = "Markdown"
+                category = "documentation"
+                layer = "documentation"
+            }
+            
+            nodes = append(nodes, models.DiagramNode{
+                ID:         file.Path,
+                Label:      file.Name,
+                Type:       "file",
+                Size:       3,
+                Category:   category,
+                Layer:      layer,
+                Technology: technology,
+                Metadata:   make(map[string]string),
+            })
+        }
+        
+        // Track directories
+        dirPath := filepath.Dir(file.Path)
+        if dirPath != "." && dirPath != "" {
+            directories[dirPath] = true
+        }
+    }
+    
+    // Add directory nodes
+    for dirPath := range directories {
+        dirName := filepath.Base(dirPath)
+        
+        category := "module"
+        layer := "module"
+        
+        // Try to infer directory purpose
+        switch strings.ToLower(dirName) {
+        case "model", "models":
+            category = "data"
+            layer = "data"
+        case "controller", "controllers", "handlers":
+            category = "controller"
+            layer = "controller"
+        case "view", "views", "templates":
+            category = "view"
+            layer = "frontend"
+        case "config", "conf":
+            category = "configuration"
+            layer = "configuration"
+        case "middleware", "middlewares":
+            category = "middleware"
+            layer = "middleware"
+        case "service", "services":
+            category = "service"
+            layer = "service"
+        case "util", "utils", "helper", "helpers":
+            category = "utility"
+            layer = "utility"
+        case "test", "tests":
+            category = "test"
+            layer = "test"
+        }
+        
+        nodes = append(nodes, models.DiagramNode{
+            ID:         dirPath,
+            Label:      dirName,
+            Type:       "directory",
+            Size:       6,
+            Category:   category,
+            Layer:      layer,
+            Technology: "N/A",
+            Metadata:   make(map[string]string),
+        })
+    }
+    
+    // Create edges based on directory structure
+    edges := []models.DiagramEdge{}
+    
+    // Connect files to their parent directories
+    for _, node := range nodes {
+        if node.Type == "file" {
+            dirPath := filepath.Dir(node.ID)
+            if dirPath != "." && dirPath != "" {
+                edges = append(edges, models.DiagramEdge{
+                    Source:        dirPath,
+                    Target:        node.ID,
+                    Type:          "contains",
+                    Weight:        1,
+                    Label:         "contains",
+                    Bidirectional: false,
+                    Metadata:      make(map[string]string),
+                })
+            }
+        }
+    }
+    
+    // Connect nested directories
+    for dir1 := range directories {
+        for dir2 := range directories {
+            if dir1 != dir2 && filepath.Dir(dir2) == dir1 {
+                edges = append(edges, models.DiagramEdge{
+                    Source:        dir1,
+                    Target:        dir2,
+                    Type:          "contains",
+                    Weight:        2,
+                    Label:         "contains",
+                    Bidirectional: false,
+                    Metadata:      make(map[string]string),
+                })
+            }
+        }
+    }
+    
+    // Try to infer some additional relationships based on naming patterns
+    for i, node1 := range nodes {
+        if node1.Type != "file" {
+            continue
+        }
+        
+        baseName1 := strings.TrimSuffix(filepath.Base(node1.ID), filepath.Ext(node1.ID))
+        
+        for j, node2 := range nodes {
+            if i == j || node2.Type != "file" {
+                continue
+            }
+            
+            baseName2 := strings.TrimSuffix(filepath.Base(node2.ID), filepath.Ext(node2.ID))
+            
+            // Connect test files to their implementation
+            if strings.HasSuffix(baseName1, "_test") && strings.TrimSuffix(baseName1, "_test") == baseName2 {
+                edges = append(edges, models.DiagramEdge{
+                    Source:        node1.ID,
+                    Target:        node2.ID,
+                    Type:          "tests",
+                    Weight:        3,
+                    Label:         "tests",
+                    Bidirectional: false,
+                    Metadata:      make(map[string]string),
+                })
+            }
+            
+            // Try to infer model-controller relationships
+            if strings.Contains(node1.ID, "/model/") && strings.Contains(node2.ID, "/controller/") {
+                // If model name appears in controller name
+                if strings.Contains(strings.ToLower(baseName2), strings.ToLower(baseName1)) {
+                    edges = append(edges, models.DiagramEdge{
+                        Source:        node2.ID,
+                        Target:        node1.ID,
+                        Type:          "uses",
+                        Weight:        2,
+                        Label:         "uses",
+                        Bidirectional: false,
+                        Metadata:      make(map[string]string),
+                    })
+                }
+            }
+        }
+    }
+    
+    // Generate description for the fallback visualization
+    overview := fmt.Sprintf("This is a basic visualization of the file structure for %s/%s. It shows the main directories and files, with inferred relationships based on naming patterns and directory structure.", owner, repo)
+    
+    return &models.ArchitectureVisualizerResponse{
+        Overview:               overview,
+        DiagramData:            models.DiagramData{Nodes: nodes, Edges: edges},
+        ComponentDescriptions:  make(map[string]string),
+    }, nil
 }
 
 // AnswerCodebaseQuestion answers a question about the codebase

@@ -1,6 +1,27 @@
 // internal/models/codenavigation.go
 package models
 
+// RepositoryInfo holds combined information about a GitHub repository.
+type RepositoryInfo struct {
+	Owner         string         `json:"owner"`
+	Name          string         `json:"name"`
+	Description   string         `json:"description"`
+	DefaultBranch string         `json:"default_branch"`
+	URL           string         `json:"url"`           // HTML URL
+	Language      string         `json:"language"`      // Primary language
+	Languages     map[string]int `json:"languages"`     // Map of language -> bytes
+	Stars         int            `json:"stars"`         // Stargazers count
+	Forks         int            `json:"forks"`         // Forks count
+	HasReadme     bool           `json:"has_readme"`    // ADDED: Indicates if a README file likely exists
+}
+
+// FileContent represents the content and metadata of a single file.
+type FileContent struct {
+	Path    string `json:"path"`
+	Content string `json:"content"` // Decoded content
+	SHA     string `json:"sha"`
+}
+
 // CodeWalkthroughRequest contains the request data for code walkthrough generation
 type CodeWalkthroughRequest struct {
 	RepositoryRequest
@@ -85,21 +106,27 @@ type DiagramData struct {
 	Edges []DiagramEdge `json:"edges"`
 }
 
-// DiagramNode represents a node in an architecture diagram
+// Update the DiagramNode and DiagramEdge types to support more detailed visualization
 type DiagramNode struct {
-	ID       string `json:"id"`
-	Label    string `json:"label"`
-	Type     string `json:"type"` // "file", "directory", "component"
-	Size     int    `json:"size"`
-	Category string `json:"category"` // For grouping/coloring
+	ID          string            `json:"id"`
+	Label       string            `json:"label"`
+	Type        string            `json:"type"`     // "file", "directory", "component", "service", "module"
+	Size        int               `json:"size"`     // Relative importance (1-10)
+	Category    string            `json:"category"` // For grouping/coloring
+	Layer       string            `json:"layer"`    // "frontend", "backend", "database", etc.
+	Technology  string            `json:"technology"` // Technology used
+	Metadata    map[string]string `json:"metadata"`  // Additional information
 }
 
 // DiagramEdge represents an edge in an architecture diagram
 type DiagramEdge struct {
-	Source   string `json:"source"`
-	Target   string `json:"target"`
-	Type     string `json:"type"` // "imports", "calls", "extends"
-	Weight   int    `json:"weight"`
+	Source      string            `json:"source"`
+	Target      string            `json:"target"`
+	Type        string            `json:"type"`     // "imports", "calls", "extends", "uses", "depends", etc.
+	Weight      int               `json:"weight"`   // Strength of relationship
+	Label       string            `json:"label"`    // Description of relationship
+	Bidirectional bool            `json:"bidirectional"` // True if relationship goes both ways
+	Metadata    map[string]string `json:"metadata"`  // Additional information
 }
 
 // CodebaseQAResponse represents the response for codebase Q&A
@@ -138,3 +165,11 @@ type CodeIssue struct {
 	Severity    string `json:"severity"` // "low", "medium", "high"
 	Suggestion  string `json:"suggestion"`
 }
+
+// ArchitectureVisualizerMermaidResponse represents the response for architecture visualization with Mermaid
+type ArchitectureVisualizerMermaidResponse struct {
+	Overview             string            `json:"overview"`
+	MermaidDiagram       string            `json:"mermaid_diagram"`
+	ComponentDescriptions map[string]string `json:"component_descriptions"`
+}
+

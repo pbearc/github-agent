@@ -4,31 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pbearc/github-agent/backend/internal/config"
 	"github.com/pbearc/github-agent/backend/internal/github"
+	"github.com/pbearc/github-agent/backend/internal/graph"
 	"github.com/pbearc/github-agent/backend/internal/llm"
-	"github.com/pbearc/github-agent/backend/pkg/common"
 )
 
-// Handler contains all the dependencies for API handlers
-type Handler struct {
-	GithubClient *github.Client
-	LLMClient    *llm.GeminiClient
-	Config       *config.Config
-	Logger       *common.Logger
-}
-
-// NewHandler creates a new Handler instance
-func NewHandler(githubClient *github.Client, llmClient *llm.GeminiClient, cfg *config.Config) *Handler {
-	return &Handler{
-		GithubClient: githubClient,
-		LLMClient:    llmClient,
-		Config:       cfg,
-		Logger:       common.NewLogger(),
-	}
-}
-
 // SetupRoutes sets up all API routes
-func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm.GeminiClient, cfg *config.Config) {
-    handler := NewHandler(githubClient, llmClient, cfg)
+func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm.GeminiClient, neo4jClient *graph.Neo4jClient, cfg *config.Config) {
+    handler := NewHandler(githubClient, llmClient, neo4jClient, cfg)
 
     // Health check
     router.GET("/health", handler.HealthCheck)
@@ -67,6 +49,7 @@ func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm
             navigate.POST("/walkthrough", handler.GenerateCodeWalkthrough)
             navigate.POST("/function", handler.ExplainFunction)
             navigate.POST("/architecture", handler.VisualizeArchitecture)
+            navigate.POST("/architecture-graph", handler.GetArchitectureGraph)
             navigate.POST("/practices", handler.GenerateBestPracticesGuide)
         }
 
@@ -83,8 +66,8 @@ func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm
 
         llmNavigate := api.Group("/llm-navigate")
         {
-            llmNavigate.POST("/index", handler.IndexCodebaseForNavigation) // Renamed function
-            llmNavigate.POST("/question", handler.NavigateCodebaseWithLLM) // Renamed function
+            llmNavigate.POST("/index", handler.IndexCodebaseForNavigation)
+            llmNavigate.POST("/question", handler.NavigateCodebaseWithLLM)
         }
 
         // LLM operation route

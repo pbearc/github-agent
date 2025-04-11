@@ -2,9 +2,13 @@
 package llm
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/google/generative-ai-go/genai"
+	"github.com/pbearc/github-agent/backend/pkg/common"
 )
 
 // buildCodeWalkthroughPrompt builds a prompt for generating a code walkthrough
@@ -175,4 +179,79 @@ Your response should be extremely specific and detailed, based directly on the p
 
 Do not use placeholder text like "appears to follow standard conventions" without explaining exactly what those conventions are.
 `, repoInfoStr, codeStr.String())
+}
+
+// GenerateCompletion generates a simple text completion
+func (c *GeminiClient) GenerateCompletion(ctx context.Context, prompt string, temperature float32, maxTokens int) (string, error) {
+    c.logger.Info("Generating completion with Gemini")
+    
+    // Validate parameters and set defaults if needed
+    if prompt == "" {
+        return "", common.NewError("prompt cannot be empty")
+    }
+    
+    if temperature <= 0 {
+        temperature = 0.7 // default temperature
+    }
+    
+    if maxTokens <= 0 {
+        maxTokens = 1024 // default max tokens
+    }
+    
+    // Configure generation parameters
+    c.model.SetTemperature(temperature)
+    c.model.SetMaxOutputTokens(int32(maxTokens))
+    c.model.SetTopP(0.95)
+    c.model.SetTopK(40)
+    
+    // Set safety settings to be more permissive for code-related content
+    c.model.SafetySettings = []*genai.SafetySetting{
+        {
+            Category:  genai.HarmCategoryHarassment,
+            Threshold: genai.HarmBlockNone,
+        },
+        {
+            Category:  genai.HarmCategoryHateSpeech,
+            Threshold: genai.HarmBlockNone,
+        },
+        {
+            Category:  genai.HarmCategoryDangerousContent,
+            Threshold: genai.HarmBlockNone,
+        },
+        {
+            Category:  genai.HarmCategorySexuallyExplicit,
+            Threshold: genai.HarmBlockNone,
+        },
+    }
+    
+    // Generate content using the Gemini model
+    resp, err := c.model.GenerateContent(ctx, genai.Text(prompt))
+    if err != nil {
+        return "", common.WrapError(err, "failed to generate completion")
+    }
+    
+    // Validate response
+    if len(resp.Candidates) == 0 {
+        return "", common.NewError("no candidates in response")
+    }
+    
+    // Check if the response was blocked for safety reasons
+    if resp.Candidates[0].FinishReason == genai.FinishReasonSafety {
+        return "", common.NewError("content filtered due to safety concerns")
+    }
+    
+    // Extract the text from the response
+    var result string
+    for _, part := range resp.Candidates[0].Content.Parts {
+        if text, ok := part.(genai.Text); ok {
+            result += string(text)
+        }
+    }
+    
+    if result == "" {
+        return "", common.NewError("empty text in response")
+    }
+    
+    c.logger.Info("Completion generated successfully")
+    return result, nil
 }

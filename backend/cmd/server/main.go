@@ -16,6 +16,7 @@ import (
 	"github.com/pbearc/github-agent/backend/internal/api/middleware"
 	"github.com/pbearc/github-agent/backend/internal/config"
 	"github.com/pbearc/github-agent/backend/internal/github"
+	"github.com/pbearc/github-agent/backend/internal/graph"
 	"github.com/pbearc/github-agent/backend/internal/llm"
 )
 
@@ -51,8 +52,18 @@ func main() {
 		log.Fatalf("Failed to initialize Gemini client: %v", err)
 	}
 
+	// Initialize Neo4j client
+	neo4jClient, err := graph.NewNeo4jClient(cfg.Neo4jURI, cfg.Neo4jUsername, cfg.Neo4jPassword)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize Neo4j client: %v", err)
+		log.Printf("Continuing without Neo4j support")
+		neo4jClient = nil
+	} else {
+		log.Println("Successfully connected to Neo4j database")
+	}
+
 	// Set up API handlers
-	handlers.SetupRoutes(router, githubClient, llmClient, cfg)
+	handlers.SetupRoutes(router, githubClient, llmClient, neo4jClient, cfg)
 	
 	// Set up the server
 	server := &http.Server{
@@ -77,6 +88,13 @@ func main() {
 	// Create a deadline to wait for current operations to complete
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
+
+	// Close Neo4j connection before shutting down
+	if neo4jClient != nil {
+		if err := neo4jClient.Close(); err != nil {
+			log.Printf("Error closing Neo4j connection: %v", err)
+		}
+	}
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatalf("Server forced to shutdown: %v", err)

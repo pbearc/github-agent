@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/go-github/v43/github"
 	"github.com/pbearc/github-agent/backend/pkg/common"
 )
 
@@ -22,59 +21,59 @@ type RepositoryInfo struct {
 }
 
 // GetRepositoryInfo gets detailed information about a repository
-func (c *Client) GetRepositoryInfo(ctx context.Context, owner, repo string) (*RepositoryInfo, error) {
-	repository, err := c.GetRepository(ctx, owner, repo)
-	if err != nil {
-		return nil, err
-	}
+// func (c *Client) GetRepositoryInfo(ctx context.Context, owner, repo string) (*RepositoryInfo, error) {
+// 	repository, err := c.GetRepository(ctx, owner, repo)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// Check if README exists
-	hasReadme := false
-	_, _, _, err = c.client.Repositories.GetContents(
-		ctx,
-		owner,
-		repo,
-		"README.md",
-		&github.RepositoryContentGetOptions{},
-	)
-	if err == nil {
-		hasReadme = true
-	} else {
-		// Try lowercase readme
-		_, _, _, err = c.client.Repositories.GetContents(
-			ctx,
-			owner,
-			repo,
-			"readme.md",
-			&github.RepositoryContentGetOptions{},
-		)
-		if err == nil {
-			hasReadme = true
-		}
-	}
+// 	// Check if README exists
+// 	hasReadme := false
+// 	_, _, _, err = c.client.Repositories.GetContents(
+// 		ctx,
+// 		owner,
+// 		repo,
+// 		"README.md",
+// 		&github.RepositoryContentGetOptions{},
+// 	)
+// 	if err == nil {
+// 		hasReadme = true
+// 	} else {
+// 		// Try lowercase readme
+// 		_, _, _, err = c.client.Repositories.GetContents(
+// 			ctx,
+// 			owner,
+// 			repo,
+// 			"readme.md",
+// 			&github.RepositoryContentGetOptions{},
+// 		)
+// 		if err == nil {
+// 			hasReadme = true
+// 		}
+// 	}
 
-	description := ""
-	if repository.Description != nil {
-		description = *repository.Description
-	}
+// 	description := ""
+// 	if repository.Description != nil {
+// 		description = *repository.Description
+// 	}
 
-	language := ""
-	if repository.Language != nil {
-		language = *repository.Language
-	}
+// 	language := ""
+// 	if repository.Language != nil {
+// 		language = *repository.Language
+// 	}
 
-	return &RepositoryInfo{
-		Owner:         owner,
-		Name:          repository.GetName(),
-		Description:   description,
-		DefaultBranch: repository.GetDefaultBranch(),
-		URL:           repository.GetHTMLURL(),
-		Language:      language,
-		Stars:         repository.GetStargazersCount(),
-		Forks:         repository.GetForksCount(),
-		HasReadme:     hasReadme,
-	}, nil
-}
+// 	return &RepositoryInfo{
+// 		Owner:         owner,
+// 		Name:          repository.GetName(),
+// 		Description:   description,
+// 		DefaultBranch: repository.GetDefaultBranch(),
+// 		URL:           repository.GetHTMLURL(),
+// 		Language:      language,
+// 		Stars:         repository.GetStargazersCount(),
+// 		Forks:         repository.GetForksCount(),
+// 		HasReadme:     hasReadme,
+// 	}, nil
+// }
 
 // GetRepositoryLanguages gets the languages used in a repository
 func (c *Client) GetRepositoryLanguages(ctx context.Context, owner, repo string) (map[string]int, error) {
@@ -85,21 +84,21 @@ func (c *Client) GetRepositoryLanguages(ctx context.Context, owner, repo string)
 	return languages, nil
 }
 
-// GetRepositoryStructure gets the file structure of a repository
-func (c *Client) GetRepositoryStructure(ctx context.Context, owner, repo, ref string) (string, error) {
-	tree, _, err := c.client.Git.GetTree(ctx, owner, repo, ref, true)
-	if err != nil {
-		return "", common.WrapError(err, "failed to get repository structure")
-	}
+// // GetRepositoryStructure gets the file structure of a repository
+// func (c *Client) GetRepositoryStructure(ctx context.Context, owner, repo, ref string) (string, error) {
+// 	tree, _, err := c.client.Git.GetTree(ctx, owner, repo, ref, true)
+// 	if err != nil {
+// 		return "", common.WrapError(err, "failed to get repository structure")
+// 	}
 
-	var sb strings.Builder
-	for _, entry := range tree.Entries {
-		sb.WriteString(*entry.Path)
-		sb.WriteString("\n")
-	}
+// 	var sb strings.Builder
+// 	for _, entry := range tree.Entries {
+// 		sb.WriteString(*entry.Path)
+// 		sb.WriteString("\n")
+// 	}
 
-	return sb.String(), nil
-}
+// 	return sb.String(), nil
+// }
 
 // CreateFile creates a new file in the repository
 func (c *Client) CreateFile(ctx context.Context, owner, repo, path, message, content, branch string) error {

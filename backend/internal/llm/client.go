@@ -101,7 +101,6 @@ func (c *GeminiClient) Close() {
 }
 
 // CreateEmbedding generates an embedding for a text using the Gemini API
-// CreateEmbedding generates an embedding for a text using the Gemini API
 func (c *GeminiClient) CreateEmbedding(ctx context.Context, text string) ([]float32, error) {
 	if text == "" {
 		return nil, common.NewError("text cannot be empty")

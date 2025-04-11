@@ -79,7 +79,7 @@ function App() {
             <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
           </div>
 
-          <Footer />
+          {/* <Footer /> */}
         </div>
 
         <Toaster position="top-right" richColors />
