@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { repositoryService, navigatorService } from "../services/api";
 import CodebaseGraph from "../components/graph/CodebaseGraph";
 import CodebaseGraph3D from "../components/graph/ForceGraph3D";
+import ReactMarkdown from "react-markdown";
 
 const ArchitectureAndPractices = () => {
   const location = useLocation();
@@ -23,6 +24,7 @@ const ArchitectureAndPractices = () => {
   const [focusPaths, setFocusPaths] = useState([]);
   const [focusPathInput, setFocusPathInput] = useState("");
   const [visualizationType, setVisualizationType] = useState("2d");
+  const [explanation, setExplanation] = useState("");
 
   useEffect(() => {
     // If URL is passed from another page, set it
@@ -137,79 +139,51 @@ const ArchitectureAndPractices = () => {
     if (!repoUrl) return;
 
     setGraphLoading(true);
-    setGraphData(null); // Clear previous data
+    setGraphData(null);
+    setExplanation("");
     try {
-      toast.info("Fetching graph data for visualization...", {
+      toast.info("Fetching graph data and generating explanation...", {
         duration: 3000,
       });
 
-      try {
-        const response = await navigatorService.getArchitectureGraph(
+      const response =
+        await navigatorService.getArchitectureGraphAndExplanation(
           repoUrl,
           branchToUse
         );
-        console.log("Fetched graph data from API:", response.data);
-        // *** Add validation/transformation if needed ***
-        if (
-          response.data &&
-          response.data.nodes &&
-          (response.data.edges || response.data.relationships)
-        ) {
-          setGraphData(response.data);
-          toast.success("Graph data loaded successfully");
-        } else {
-          console.error(
-            "API returned invalid graph data structure",
-            response.data
-          );
-          throw new Error("Invalid graph data structure from API"); // Trigger fallback
-        }
-      } catch (error) {
-        console.warn(
-          "Failed to fetch graph data from specific endpoint:",
-          error
+      console.log(
+        "Fetched graph data and explanation from API:",
+        response.data
+      );
+
+      if (
+        response.data &&
+        response.data.graph &&
+        response.data.graph.nodes &&
+        (response.data.graph.edges || response.data.graph.relationships) &&
+        response.data.explanation
+      ) {
+        setGraphData(response.data.graph);
+        setExplanation(response.data.explanation);
+        toast.success("Graph data and explanation loaded successfully");
+      } else {
+        console.error(
+          "API returned invalid graph data or explanation structure",
+          response.data
         );
-        // Fallback to using architecture.diagram_data
-        if (architecture?.diagram_data) {
-          console.log("Falling back to architecture.diagram_data");
-          const fallbackData = {
-            // Ensure the fallback uses the expected keys
-            nodes: architecture.diagram_data.nodes || [],
-            // Prefer 'edges' if available, otherwise use 'relationships'
-            edges: architecture.diagram_data.edges,
-            relationships: !architecture.diagram_data.edges
-              ? architecture.diagram_data.relationships
-              : undefined,
-          };
-          // *** Add validation/transformation if needed ***
-          if (
-            fallbackData.nodes &&
-            (fallbackData.edges || fallbackData.relationships)
-          ) {
-            setGraphData(fallbackData);
-            toast.info("Using existing architecture data for visualization");
-          } else {
-            console.error(
-              "Fallback diagram_data also has invalid structure",
-              fallbackData
-            );
-            throw error; // Re-throw if fallback is also invalid
-          }
-        } else {
-          console.error("No fallback data available in architecture object.");
-          throw error; // Re-throw if no fallback is possible
-        }
+        throw new Error("Invalid graph data or explanation structure from API");
       }
     } catch (error) {
       console.error("Error processing graph data:", error);
-      let errorMessage = "Failed to load graph data for visualization";
+      let errorMessage = "Failed to load graph data and explanation";
       if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
       }
       toast.error(errorMessage);
-      setGraphData(null); // Ensure graphData is null on error
+      setGraphData(null);
+      setExplanation("");
     } finally {
       setGraphLoading(false);
     }
@@ -413,6 +387,18 @@ const ArchitectureAndPractices = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
+          {/* Explanation Section */}
+          {explanation && (
+            <Card
+              title="Architecture Explanation"
+              className="bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow mb-6"
+            >
+              <div className="prose prose-sm max-w-none prose-dark prose-invert text-white">
+                <ReactMarkdown>{explanation}</ReactMarkdown>
+              </div>
+            </Card>
+          )}
+
           {/* Architecture Visualization Section */}
           <Card
             title="Architecture Diagram"

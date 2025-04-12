@@ -51,6 +51,8 @@ func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm
             navigate.POST("/architecture", handler.VisualizeArchitecture)
             navigate.POST("/architecture-graph", handler.GetArchitectureGraph)
             navigate.POST("/practices", handler.GenerateBestPracticesGuide)
+            navigate.POST("/explain-architecture", handler.ExplainArchitectureGraph)
+
         }
 
         // Push routes
@@ -69,6 +71,9 @@ func SetupRoutes(router *gin.Engine, githubClient *github.Client, llmClient *llm
             llmNavigate.POST("/index", handler.IndexCodebaseForNavigation)
             llmNavigate.POST("/question", handler.NavigateCodebaseWithLLM)
         }
+
+        // Smart Navigation - add this new route
+        api.POST("/smart-navigate", handler.SmartNavigate)
 
         // LLM operation route
         api.POST("/llm/operation", handler.ProcessLLMOperation)

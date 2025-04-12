@@ -75,15 +75,6 @@ type RepositoryInfo struct {
 // 	}, nil
 // }
 
-// GetRepositoryLanguages gets the languages used in a repository
-func (c *Client) GetRepositoryLanguages(ctx context.Context, owner, repo string) (map[string]int, error) {
-	languages, _, err := c.client.Repositories.ListLanguages(ctx, owner, repo)
-	if err != nil {
-		return nil, common.WrapError(err, "failed to list repository languages")
-	}
-	return languages, nil
-}
-
 // // GetRepositoryStructure gets the file structure of a repository
 // func (c *Client) GetRepositoryStructure(ctx context.Context, owner, repo, ref string) (string, error) {
 // 	tree, _, err := c.client.Git.GetTree(ctx, owner, repo, ref, true)

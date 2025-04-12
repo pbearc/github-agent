@@ -3,6 +3,8 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -134,6 +136,7 @@ func (h *Handler) IndexCodebaseForNavigation(c *gin.Context) {
 
     c.JSON(http.StatusOK, response)
 }
+
 
 // NavigateCodebase handles codebase Q&A requests
 func (h *Handler) NavigateCodebaseWithLLM(c *gin.Context) {
@@ -343,6 +346,85 @@ func (h *Handler) GetArchitectureGraph(c *gin.Context) {
 
     c.JSON(http.StatusOK, graphData)
 }
+
+// ExplainArchitectureGraph generates an explanation of the architecture graph
+func (h *Handler) ExplainArchitectureGraph(c *gin.Context) {
+    var req struct {
+        URL    string `json:"url" binding:"required"`
+        Branch string `json:"branch"`
+    }
+    
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": "Invalid request: " + err.Error(),
+        })
+        return
+    }
+
+    // Parse the GitHub URL
+    owner, repo, err := github.ParseRepoURL(req.URL)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": "Invalid GitHub URL: " + err.Error(),
+        })
+        return
+    }
+
+    // Set a timeout for the request
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
+    defer cancel()
+
+    // Get architecture graph data
+    graphData, err := h.Neo4jClient.GetCodebaseGraph(ctx, owner, repo, req.Branch)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "Failed to get architecture graph: " + err.Error(),
+        })
+        return
+    }
+
+    // Convert graphData to a format suitable for the LLM
+    graphDataJSON, err := json.Marshal(graphData)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "Failed to process graph data: " + err.Error(),
+        })
+        return
+    }
+
+    // Create a prompt for the LLM
+    prompt := fmt.Sprintf(`
+You are an expert software architect. Analyze this codebase structure and provide a clear explanation.
+
+Here is the graph data representing the codebase structure:
+%s
+
+Please provide:
+1. A high-level overview of the architecture
+2. Identification of key files and their roles in the system
+3. Explanation of important relationships between files
+4. Any notable patterns or architectural decisions evident from the graph
+
+Your response should be well-structured and easy to read when rendered as Markdown.
+`, string(graphDataJSON))
+
+    // Generate explanation using LLM
+    explanation, err := h.LLMClient.GenerateCompletion(ctx, prompt, 0.7, 1024)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "Failed to generate architecture explanation: " + err.Error(),
+        })
+        return
+    }
+
+    // Return both the graph data and the explanation
+    c.JSON(http.StatusOK, gin.H{
+        "graph": graphData,
+        "explanation": explanation,
+    })
+}
+
+
 
 // VisualizeArchitecture handles architecture visualization requests
 func (h *Handler) VisualizeArchitecture(c *gin.Context) {

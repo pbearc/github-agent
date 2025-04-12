@@ -138,9 +138,11 @@ type CodebaseQAResponse struct {
 
 // RelevantFile represents a file relevant to a Q&A response
 type RelevantFile struct {
-	Path     string `json:"path"`
-	Snippet  string `json:"snippet"`
-	Relevance float64 `json:"relevance"`
+    Path      string `json:"path"`
+    Snippet   string `json:"snippet"`
+    Relevance float64    `json:"relevance"`
+    StartLine int    `json:"start_line,omitempty"`
+    EndLine   int    `json:"end_line,omitempty"`
 }
 
 // BestPracticesResponse represents the response for best practices guide

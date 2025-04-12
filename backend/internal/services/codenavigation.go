@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/pbearc/github-agent/backend/internal/llm"
 	"github.com/pbearc/github-agent/backend/internal/models"
 	"github.com/pbearc/github-agent/backend/pkg/common"
+	"github.com/sirupsen/logrus"
 )
 
 // CodeNavigationService handles code navigation features
@@ -892,26 +894,45 @@ func (s *CodeNavigationService) AnswerCodebaseQuestion(ctx context.Context, owne
         branch = repoInfo.DefaultBranch
     }
 
-    // Search for relevant code based on the question
-    searchResults, err := s.githubClient.SearchCode(ctx, owner, repo, question)
+    // Extract search keywords from the question using LLM
+    keywords, err := s.extractSearchKeywords(ctx, question, repoInfo.Language)
     if err != nil {
-        s.logger.WithField("error", err).Warning("Failed to search code")
+        s.logger.WithField("error", err).Warning("Failed to extract keywords, falling back to original question")
+        keywords = []string{question}
     }
 
-    // Collect relevant code snippets
+    // Collect relevant code from all keywords
     relevantCode := make(map[string]string)
-    for _, result := range searchResults {
-        if result == nil || result.Path == nil {
-            continue
-        }
-        
-        content, err := s.githubClient.GetFileContentText(ctx, owner, repo, *result.Path, branch)
+    
+    // Search with each keyword and combine results
+    for _, keyword := range keywords {
+        searchResults, err := s.githubClient.SearchCode(ctx, owner, repo, keyword)
         if err != nil {
-            s.logger.WithField("error", err).Warning("Failed to get content for file: " + *result.Path)
+            s.logger.WithFields(logrus.Fields{
+                "error": err,
+                "keyword": keyword,
+            }).Warning("Failed to search code with keyword")
             continue
         }
-        
-        relevantCode[*result.Path] = content.Content
+
+        for _, result := range searchResults {
+            if result == nil || result.Path == nil {
+                continue
+            }
+            
+            // Skip if we already have this file
+            if _, exists := relevantCode[*result.Path]; exists {
+                continue
+            }
+            
+            content, err := s.githubClient.GetFileContentText(ctx, owner, repo, *result.Path, branch)
+            if err != nil {
+                s.logger.WithField("error", err).Warning("Failed to get content for file: " + *result.Path)
+                continue
+            }
+            
+            relevantCode[*result.Path] = content.Content
+        }
     }
 
     // If we couldn't find enough relevant code, get some key files
@@ -939,10 +960,98 @@ func (s *CodeNavigationService) AnswerCodebaseQuestion(ctx context.Context, owne
     err = json.Unmarshal([]byte(answerJSON), &answer)
     if err != nil {
         // If JSON parsing fails, try to structure the text response
-        answer = s.structureQAResponse(answerJSON, question, relevantCode)
+        answer = s.structureQAResponse(answerJSON, question, relevantCode, keywords)
     }
 
     return &answer, nil
+}
+
+// extractSearchKeywords uses the LLM to extract relevant search keywords from a natural language question
+func (s *CodeNavigationService) extractSearchKeywords(ctx context.Context, question, language string) ([]string, error) {
+    prompt := fmt.Sprintf(`
+You are an expert code search assistant. Your task is to extract specific technical keywords from a user's question that would be effective for searching in a code repository.
+
+User Question: %s
+Repository Language: %s
+
+Instructions:
+1. Identify technical terms, library names, function names, or concepts that would likely appear in code files
+2. Focus on specific technical terms rather than general concepts
+3. Return 2-5 of the most relevant search terms as a JSON array of strings
+4. Each term should be short (1-3 words) and highly specific to technical implementations
+5. If the question is about a specific library (like SQLAlchemy), include the library name as one of the terms
+
+Response Format:
+{"keywords": ["term1", "term2", "term3"]}
+`, question, language)
+
+    response, err := s.llmClient.GenerateText(ctx, prompt)
+    if err != nil {
+        return nil, err
+    }
+
+    // Parse the JSON response
+    var result struct {
+        Keywords []string `json:"keywords"`
+    }
+    
+    err = json.Unmarshal([]byte(response), &result)
+    if err != nil {
+        // If parsing fails, try to extract keywords from text response
+        return s.fallbackKeywordExtraction(response), nil
+    }
+    
+    return result.Keywords, nil
+}
+
+// fallbackKeywordExtraction attempts to extract keywords from a text response
+// when JSON parsing fails
+func (s *CodeNavigationService) fallbackKeywordExtraction(response string) []string {
+    // Simple extraction by looking for keywords in quotes or after colons
+    keywords := []string{}
+    
+    // Look for JSON-like patterns even in malformed responses
+    re := regexp.MustCompile(`["']([^"']+)["']`)
+    matches := re.FindAllStringSubmatch(response, -1)
+    
+    for _, match := range matches {
+        if len(match) > 1 && len(match[1]) > 0 && len(match[1]) < 50 {
+            keywords = append(keywords, match[1])
+        }
+    }
+    
+    // If we still don't have keywords, split by common separators
+    if len(keywords) == 0 {
+        splitWords := strings.FieldsFunc(response, func(r rune) bool {
+            return r == ',' || r == ';' || r == '\n'
+        })
+        
+        for _, word := range splitWords {
+            word = strings.TrimSpace(word)
+            if len(word) > 0 && len(word) < 50 {
+                keywords = append(keywords, word)
+            }
+        }
+    }
+    
+    // Deduplicate and limit results
+    seen := make(map[string]bool)
+    unique := []string{}
+    
+    for _, keyword := range keywords {
+        keyword = strings.TrimSpace(strings.ToLower(keyword))
+        if !seen[keyword] && keyword != "" {
+            seen[keyword] = true
+            unique = append(unique, keyword)
+        }
+    }
+    
+    // Limit to top 5 keywords
+    if len(unique) > 5 {
+        unique = unique[:5]
+    }
+    
+    return unique
 }
 
 // GenerateBestPracticesGuide generates a best practices guide
@@ -1361,122 +1470,45 @@ func (s *CodeNavigationService) structureFunctionExplanation(text string, functi
     return explanation
 }
 
-// structureArchitectureVisualization structures raw text into an ArchitectureVisualizerResponse
-func (s *CodeNavigationService) structureArchitectureVisualization(text string) models.ArchitectureVisualizerResponse {
-    architecture := models.ArchitectureVisualizerResponse{
-        ComponentDescriptions: make(map[string]string),
-        DiagramData: models.DiagramData{
-            Nodes: []models.DiagramNode{},
-            Edges: []models.DiagramEdge{},
-        },
+// calculateKeywordRelevanceScore computes relevance based on extracted keywords
+// Returns a score from 1-100 representing the percentage of relevance
+func (s *CodeNavigationService) calculateKeywordRelevanceScore(snippet string, keywords []string) int {
+    // If there are no keywords, return minimum score
+    if len(keywords) == 0 {
+        return 1
     }
     
-    // Extract overview
-    sections := strings.Split(text, "##")
-    if len(sections) > 1 {
-        architecture.Overview = strings.TrimSpace(sections[0])
-    } else {
-        // Try different section marker
-        sections = strings.Split(text, "#")
-        if len(sections) > 1 {
-            architecture.Overview = strings.TrimSpace(sections[0])
-        } else {
-            // Just take the first paragraph
-            paragraphs := strings.Split(text, "\n\n")
-            if len(paragraphs) > 0 {
-                architecture.Overview = strings.TrimSpace(paragraphs[0])
-            }
+    // Convert snippet to lowercase for case-insensitive matching
+    lowerSnippet := strings.ToLower(snippet)
+    
+    // Count how many keywords appear in the snippet
+    matchCount := 0
+    for _, keyword := range keywords {
+        if strings.Contains(lowerSnippet, strings.ToLower(keyword)) {
+            matchCount++
         }
     }
     
-    // Look for component descriptions
-    for _, section := range sections {
-        if strings.Contains(strings.ToLower(section), "component") || 
-           strings.Contains(strings.ToLower(section), "module") {
-            
-            lines := strings.Split(section, "\n")
-            if len(lines) > 0 {
-                title := strings.TrimSpace(lines[0])
-                
-                // Extract component name from title
-                var componentName string
-                if strings.Contains(title, ":") {
-                    parts := strings.SplitN(title, ":", 2)
-                    componentName = strings.TrimSpace(parts[0])
-                } else {
-                    componentName = title
-                }
-                
-                // Extract description
-                var descBuilder strings.Builder
-                for i := 1; i < len(lines); i++ {
-                    descBuilder.WriteString(lines[i])
-                    descBuilder.WriteString("\n")
-                }
-                
-                architecture.ComponentDescriptions[componentName] = strings.TrimSpace(descBuilder.String())
-                
-                // Create a node for this component
-                architecture.DiagramData.Nodes = append(architecture.DiagramData.Nodes, models.DiagramNode{
-                    ID:       componentName,
-                    Label:    componentName,
-                    Type:     "component",
-                    Size:     10,
-                    Category: "component",
-                })
-            }
-        }
+    // Calculate percentage of keywords matched (1-100 scale)
+    // Minimum score is 1, maximum is 100
+    if matchCount == 0 {
+        return 1 // Minimum score
     }
     
-    // Try to extract relationships
-    for _, section := range sections {
-        if strings.Contains(strings.ToLower(section), "relationship") || 
-           strings.Contains(strings.ToLower(section), "dependenc") {
-            
-            lines := strings.Split(section, "\n")
-            for _, line := range lines {
-                line = strings.TrimSpace(line)
-                
-                // Look for "A -> B" or "A depends on B" patterns
-                if strings.Contains(line, "->") {
-                    parts := strings.Split(line, "->")
-                    if len(parts) >= 2 {
-                        source := strings.TrimSpace(parts[0])
-                        target := strings.TrimSpace(parts[1])
-                        
-                        architecture.DiagramData.Edges = append(architecture.DiagramData.Edges, models.DiagramEdge{
-                            Source: source,
-                            Target: target,
-                            Type:   "depends",
-                            Weight: 1,
-                        })
-                    }
-                } else if strings.Contains(strings.ToLower(line), "depend") {
-                    // Try to extract components from text
-                    for src, _ := range architecture.ComponentDescriptions {
-                        if strings.Contains(line, src) {
-                            for tgt, _ := range architecture.ComponentDescriptions {
-                                if src != tgt && strings.Contains(line, tgt) {
-                                    architecture.DiagramData.Edges = append(architecture.DiagramData.Edges, models.DiagramEdge{
-                                        Source: src,
-                                        Target: tgt,
-                                        Type:   "depends",
-                                        Weight: 1,
-                                    })
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    score := int((float64(matchCount) / float64(len(keywords))) * 100)
+    
+    // Ensure score is within bounds
+    if score < 1 {
+        score = 1
+    } else if score > 100 {
+        score = 100
     }
     
-    return architecture
+    return score
 }
 
 // structureQAResponse structures raw text into a CodebaseQAResponse
-func (s *CodeNavigationService) structureQAResponse(text string, question string, relevantCode map[string]string) models.CodebaseQAResponse {
+func (s *CodeNavigationService) structureQAResponse(text string, question string, relevantCode map[string]string, keywords []string) models.CodebaseQAResponse {
     qa := models.CodebaseQAResponse{
         RelevantFiles:      []models.RelevantFile{},
         FollowupQuestions:  []string{},
@@ -1485,22 +1517,66 @@ func (s *CodeNavigationService) structureQAResponse(text string, question string
     // Use the whole text as the answer
     qa.Answer = text
     
+    // Track which files we've already processed to avoid duplicates
+    processedFiles := make(map[string]bool)
+    
     // Extract relevant files from the answer text
     lines := strings.Split(text, "\n")
     for _, line := range lines {
         for filePath := range relevantCode {
-            if strings.Contains(line, filePath) {
-                // Extract the snippet around the reference
-                snippet := s.extractSnippetAroundReference(relevantCode[filePath], filePath)
+            if strings.Contains(line, filePath) && !processedFiles[filePath] {
+                processedFiles[filePath] = true
+                
+                // Extract a more meaningful snippet around the reference
+                snippet := s.extractImprovedSnippet(relevantCode[filePath], filePath, line)
+                
+                // Calculate relevance based on keywords (1-100 scale)
+                relevanceScore := s.calculateKeywordRelevanceScore(snippet, keywords)
+                
+                // Extract line range from header comment if available
+                startLine, endLine := 0, 0
+                headerRegex := regexp.MustCompile(`// .+ \(lines (\d+)-(\d+) of \d+\)`)
+                match := headerRegex.FindStringSubmatch(snippet)
+                if len(match) >= 3 {
+                    startLine, _ = strconv.Atoi(match[1])
+                    endLine, _ = strconv.Atoi(match[2])
+                }
                 
                 qa.RelevantFiles = append(qa.RelevantFiles, models.RelevantFile{
-                    Path:     filePath,
-                    Snippet:  snippet,
-                    Relevance: 1.0,
+                    Path:      filePath,
+                    Snippet:   snippet,
+                    Relevance: float64(relevanceScore),
+                    StartLine: startLine,
+                    EndLine:   endLine,
                 })
                 
                 break
             }
+        }
+    }
+    
+    // If we didn't find file references in the text, include all relevant files
+    if len(qa.RelevantFiles) == 0 {
+        for filePath, content := range relevantCode {
+            snippet := s.extractImprovedSnippet(content, filePath, "")
+            relevanceScore := s.calculateKeywordRelevanceScore(snippet, keywords)
+            
+            // Extract line range if available
+            startLine, endLine := 0, 0
+            headerRegex := regexp.MustCompile(`// .+ \(lines (\d+)-(\d+) of \d+\)`)
+            match := headerRegex.FindStringSubmatch(snippet)
+            if len(match) >= 3 {
+                startLine, _ = strconv.Atoi(match[1])
+                endLine, _ = strconv.Atoi(match[2])
+            }
+            
+            qa.RelevantFiles = append(qa.RelevantFiles, models.RelevantFile{
+                Path:      filePath,
+                Snippet:   snippet,
+                Relevance: float64(relevanceScore),
+                StartLine: startLine,
+                EndLine:   endLine,
+            })
         }
     }
     
@@ -1539,45 +1615,286 @@ func (s *CodeNavigationService) structureQAResponse(text string, question string
     return qa
 }
 
-// extractSnippetAroundReference extracts a snippet of code around a reference
-func (s *CodeNavigationService) extractSnippetAroundReference(content, reference string) string {
+// extractImprovedSnippet extracts a more meaningful snippet from the file content
+// with better parsing of standardized line number references
+func (s *CodeNavigationService) extractImprovedSnippet(content string, filePath string, referenceLine string) string {
     lines := strings.Split(content, "\n")
-    var startLine, endLine int
     
-    // Look for the reference in the content
+    // If the file is small enough, return the entire file
+    if len(lines) <= 50 {
+        // Add a header comment but no line numbers in the actual code
+        return fmt.Sprintf("// Complete file: %s (%d lines)\n\n%s", 
+            filePath, len(lines), content)
+    }
+
+    // First, look for the standardized line references we asked for in the prompt
+    // Format: "lines X-Y" or "line X" or "lines X, Y, Z"
+    standardLineRegex := regexp.MustCompile(`lines?\s+(\d+)(?:\s*-\s*(\d+))?`)
+    standardMatches := standardLineRegex.FindStringSubmatch(referenceLine)
+    
+    if len(standardMatches) > 1 {
+        startLine, err := strconv.Atoi(standardMatches[1])
+        if err != nil {
+            startLine = 1 // Default to beginning if parsing fails
+        }
+        
+        // Adjust to 0-based index
+        startLine = startLine - 1
+        if startLine < 0 {
+            startLine = 0
+        }
+        
+        endLine := startLine + 20 // Default to showing ~20 lines
+        
+        // If a range was specified
+        if len(standardMatches) > 2 && standardMatches[2] != "" {
+            parsedEndLine, err := strconv.Atoi(standardMatches[2])
+            if err == nil {
+                endLine = parsedEndLine - 1 // Convert to 0-based
+            }
+        }
+        
+        // Add context before and after
+        contextBefore := 3
+        contextAfter := 3
+        
+        // Adjust start and end to include context
+        adjustedStart := max(0, startLine - contextBefore)
+        adjustedEnd := min(len(lines) - 1, endLine + contextAfter)
+        
+        // Extract the relevant portion without line numbers in the code
+        var snippetBuilder strings.Builder
+        
+        // Add a header comment with line range info
+        snippetBuilder.WriteString(fmt.Sprintf("// %s (lines %d-%d of %d)\n\n", 
+            filePath, adjustedStart+1, adjustedEnd+1, len(lines)))
+        
+        // Add the code without line numbers
+        for i := adjustedStart; i <= adjustedEnd; i++ {
+            snippetBuilder.WriteString(lines[i] + "\n")
+        }
+        
+        return snippetBuilder.String()
+    }
+    
+    // Also check for comma-separated line format: "lines X, Y, Z"
+    commaLineRegex := regexp.MustCompile(`lines\s+(\d+)(?:\s*,\s*\d+)*(?:\s*(?:and|&)\s*\d+)?`)
+    if commaLineRegex.MatchString(referenceLine) {
+        // Extract all numbers from the reference
+        numberRegex := regexp.MustCompile(`\b(\d+)\b`)
+        allNumbers := numberRegex.FindAllString(referenceLine, -1)
+        
+        var lineNumbers []int
+        for _, numStr := range allNumbers {
+            num, err := strconv.Atoi(numStr)
+            if err == nil && num > 0 && num <= len(lines) {
+                lineNumbers = append(lineNumbers, num-1) // Convert to 0-based
+            }
+        }
+        
+        if len(lineNumbers) > 0 {
+            sort.Ints(lineNumbers)
+            
+            // Find a good range to show based on the referenced lines
+            startLine := lineNumbers[0]
+            endLine := lineNumbers[len(lineNumbers)-1]
+            
+            // Ensure we show enough context
+            if endLine - startLine < 10 {
+                endLine = min(len(lines)-1, startLine + 10)
+            }
+            
+            // Add a bit more context
+            adjustedStart := max(0, startLine - 3)
+            adjustedEnd := min(len(lines) - 1, endLine + 3)
+            
+            var snippetBuilder strings.Builder
+            
+            // Add a header comment with line range info
+            snippetBuilder.WriteString(fmt.Sprintf("// %s (lines %d-%d of %d)\n\n", 
+                filePath, adjustedStart+1, adjustedEnd+1, len(lines)))
+            
+            // Add the code without line numbers
+            for i := adjustedStart; i <= adjustedEnd; i++ {
+                snippetBuilder.WriteString(lines[i] + "\n")
+            }
+            
+            return snippetBuilder.String()
+        }
+    }
+    
+    // If we still can't find line references, try other methods
+    
+    // Look for code snippets in backticks
+    codeReferenceRegex := regexp.MustCompile("`([^`]+)`")
+    codeReferences := codeReferenceRegex.FindAllStringSubmatch(referenceLine, -1)
+    
+    for _, match := range codeReferences {
+        if len(match) > 1 {
+            codeRef := match[1]
+            
+            // Search for the code reference in the file
+            for i, line := range lines {
+                if strings.Contains(line, codeRef) {
+                    // Found the reference, extract surrounding context
+                    startLine := max(0, i-5)
+                    endLine := min(len(lines)-1, i+15)
+                    
+                    var snippetBuilder strings.Builder
+                    snippetBuilder.WriteString(fmt.Sprintf("// %s (lines %d-%d of %d, around '%s')\n\n", 
+                        filePath, startLine+1, endLine+1, len(lines), codeRef))
+                    
+                    // Add the code without line numbers
+                    for j := startLine; j <= endLine; j++ {
+                        snippetBuilder.WriteString(lines[j] + "\n")
+                    }
+                    
+                    return snippetBuilder.String()
+                }
+            }
+        }
+    }
+    
+    // Look for class/function definitions mentioned in the text
+    classOrMethodRegex := regexp.MustCompile(`\b(class|def|function)\s+(\w+)`)
+    classMatches := classOrMethodRegex.FindAllStringSubmatch(referenceLine, -1)
+    
+    for _, match := range classMatches {
+        if len(match) > 2 {
+            defType := match[1]   // "class" or "def" or "function"
+            defName := match[2]   // The name itself
+            
+            // Search for the definition in the file
+            for i, line := range lines {
+                if strings.Contains(line, defType+" "+defName) {
+                    // Found the definition, extract the definition and implementation
+                    startLine := max(0, i-2)
+                    endLine := min(len(lines)-1, i+20)
+                    
+                    var snippetBuilder strings.Builder
+                    snippetBuilder.WriteString(fmt.Sprintf("// %s (lines %d-%d of %d, definition of %s %s)\n\n", 
+                        filePath, startLine+1, endLine+1, len(lines), defType, defName))
+                    
+                    // Add the code without line numbers
+                    for j := startLine; j <= endLine; j++ {
+                        snippetBuilder.WriteString(lines[j] + "\n")
+                    }
+                    
+                    return snippetBuilder.String()
+                }
+            }
+        }
+    }
+    
+    // If the file path contains a significant part (e.g., "models.py"), 
+    // look for key sections in the file
+    parts := strings.Split(filePath, "/")
+    if len(parts) > 0 {
+        filename := parts[len(parts)-1]
+        baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
+        
+        // If the base name is something meaningful (not just "env" or "init")
+        if len(baseName) > 3 && !stringInSlice(baseName, []string{"env", "init", "config"}) {
+            // Look for key definitions related to the file name
+            for i, line := range lines {
+                if (strings.Contains(line, "class "+baseName) || 
+                    strings.Contains(line, "def "+baseName) || 
+                    strings.Contains(line, "function "+baseName) ||
+                    strings.Contains(line, "interface "+baseName) ||
+                    strings.Contains(line, "struct "+baseName)) {
+                    
+                    // Found a definition related to the file name
+                    startLine := max(0, i-2)
+                    endLine := min(len(lines)-1, i+20)
+                    
+                    var snippetBuilder strings.Builder
+                    snippetBuilder.WriteString(fmt.Sprintf("// %s (lines %d-%d of %d, key definition)\n\n", 
+                        filePath, startLine+1, endLine+1, len(lines)))
+                    
+                    // Add the code without line numbers
+                    for j := startLine; j <= endLine; j++ {
+                        snippetBuilder.WriteString(lines[j] + "\n")
+                    }
+                    
+                    return snippetBuilder.String()
+                }
+            }
+        }
+    }
+    
+    // Fallback: look for any key structural element
     for i, line := range lines {
-        if strings.Contains(line, reference) {
-            startLine = i - 5
-            if startLine < 0 {
-                startLine = 0
+        line = strings.TrimSpace(line)
+        if strings.HasPrefix(line, "class ") || 
+           strings.HasPrefix(line, "def ") || 
+           strings.HasPrefix(line, "function ") || 
+           strings.HasPrefix(line, "interface ") || 
+           strings.HasPrefix(line, "struct ") {
+            
+            startLine := max(0, i-2)
+            endLine := min(len(lines)-1, i+20)
+            
+            var snippetBuilder strings.Builder
+            snippetBuilder.WriteString(fmt.Sprintf("// %s (lines %d-%d of %d, key section)\n\n", 
+                filePath, startLine+1, endLine+1, len(lines)))
+            
+            // Add the code without line numbers
+            for j := startLine; j <= endLine; j++ {
+                snippetBuilder.WriteString(lines[j] + "\n")
             }
             
-            endLine = i + 5
-            if endLine >= len(lines) {
-                endLine = len(lines) - 1
-            }
-            
-            break
+            return snippetBuilder.String()
         }
     }
     
-    // If reference not found, just take the first few lines
-    if startLine == 0 && endLine == 0 {
-        endLine = 10
-        if endLine >= len(lines) {
-            endLine = len(lines) - 1
-        }
-    }
-    
-    // Extract the snippet
+    // Final fallback: return first section with file info
     var snippetBuilder strings.Builder
-    for i := startLine; i <= endLine; i++ {
-        snippetBuilder.WriteString(lines[i])
-        snippetBuilder.WriteString("\n")
+    endLine := min(30, len(lines) - 1)
+    
+    snippetBuilder.WriteString(fmt.Sprintf("// %s (first %d lines of %d total)\n\n", 
+        filePath, endLine+1, len(lines)))
+    
+    // Add the code without line numbers
+    for i := 0; i <= endLine; i++ {
+        snippetBuilder.WriteString(lines[i] + "\n")
     }
     
-    return strings.TrimSpace(snippetBuilder.String())
+    // If the file is much longer, add an indication that it's truncated
+    if len(lines) > endLine + 1 {
+        snippetBuilder.WriteString(fmt.Sprintf("\n// ... %d more lines not shown ...\n", len(lines) - endLine - 1))
+    }
+    
+    return snippetBuilder.String()
 }
+
+// Helper function to check if a string is in a slice
+func stringInSlice(str string, list []string) bool {
+    for _, v := range list {
+        if v == str {
+            return true
+        }
+    }
+    return false
+}
+
+func max(a, b int) int {
+    if a > b {
+        return a
+    }
+    return b
+}
+
+
+
+// Helper function for min of two integers (Go < 1.21 doesn't have this in std lib)
+func min(a, b int) int {
+    if a < b {
+        return a
+    }
+    return b
+}
+
+
 
 // structureBestPracticesGuide structures raw text into a BestPracticesResponse
 func (s *CodeNavigationService) structureBestPracticesGuide(text string) models.BestPracticesResponse {

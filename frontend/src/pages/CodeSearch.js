@@ -7,8 +7,391 @@ import CodeEditor from "../components/ui/CodeEditor";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { repositoryService, navigatorService } from "../services/api";
-import DOMPurify from "dompurify";
-import { marked } from "marked";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import Tabs from "../components/ui/Tabs";
+
+// Helper components for different API types
+const CommitsView = ({ data }) => (
+  <div className="space-y-4">
+    {data?.map((commit, index) => (
+      <div
+        key={index}
+        className="border border-gray-800 rounded p-4 bg-dark-200/50"
+      >
+        <div className="flex justify-between">
+          <h3 className="text-sm font-medium text-gray-200">
+            {commit.message?.split("\n")[0]}
+          </h3>
+          <span className="text-xs text-gray-400">
+            {new Date(commit.commit_date).toLocaleDateString()}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Author: {commit.author}</p>
+        {commit.files_changed?.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-400">
+              Files changed: {commit.files_changed.length}
+            </p>
+            <div className="mt-1 text-xs">
+              <span className="inline-block px-2 py-1 rounded-full text-xs bg-primary-900/30 text-primary-300 mr-2">
+                +{commit.lines_added}
+              </span>
+              <span className="inline-block px-2 py-1 rounded-full text-xs bg-red-900/30 text-red-300">
+                -{commit.lines_deleted}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+const PullRequestsView = ({ data }) => (
+  <div className="space-y-4">
+    {data?.map((pr, index) => (
+      <div
+        key={index}
+        className="border border-gray-800 rounded p-4 bg-dark-200/50"
+      >
+        <div className="flex justify-between">
+          <h3 className="text-sm font-medium text-gray-200">
+            #{pr.number} {pr.title}
+          </h3>
+          <span
+            className={`text-xs px-2 py-1 rounded-full ${
+              pr.state === "open"
+                ? "bg-green-900/30 text-green-300"
+                : pr.state === "merged"
+                ? "bg-purple-900/30 text-purple-300"
+                : "bg-red-900/30 text-red-300"
+            }`}
+          >
+            {pr.state}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          By: {pr.author} • {new Date(pr.created_at).toLocaleDateString()}
+        </p>
+        {pr.labels?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {pr.labels.map((label, i) => (
+              <span
+                key={i}
+                className="inline-block px-2 py-1 rounded-full text-xs bg-secondary-900/30 text-secondary-300"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+const IssuesView = ({ data }) => (
+  <div className="space-y-4">
+    {data?.map((issue, index) => (
+      <div
+        key={index}
+        className="border border-gray-800 rounded p-4 bg-dark-200/50"
+      >
+        <div className="flex justify-between">
+          <h3 className="text-sm font-medium text-gray-200">
+            #{issue.number} {issue.title}
+          </h3>
+          <span
+            className={`text-xs px-2 py-1 rounded-full ${
+              issue.state === "open"
+                ? "bg-green-900/30 text-green-300"
+                : "bg-red-900/30 text-red-300"
+            }`}
+          >
+            {issue.state}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          By: {issue.author} • {new Date(issue.created_at).toLocaleDateString()}
+        </p>
+        {issue.labels?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {issue.labels.map((label, i) => (
+              <span
+                key={i}
+                className="inline-block px-2 py-1 rounded-full text-xs bg-secondary-900/30 text-secondary-300"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+const ReleasesView = ({ data }) => (
+  <div className="space-y-4">
+    {data?.map((release, index) => (
+      <div
+        key={index}
+        className="border border-gray-800 rounded p-4 bg-dark-200/50"
+      >
+        <div className="flex justify-between">
+          <h3 className="text-sm font-medium text-gray-200">
+            {release.name || release.tag_name}
+          </h3>
+          <span
+            className={`text-xs px-2 py-1 rounded-full ${
+              release.pre_release
+                ? "bg-orange-900/30 text-orange-300"
+                : "bg-blue-900/30 text-blue-300"
+            }`}
+          >
+            {release.pre_release ? "Pre-release" : "Release"}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Released by: {release.author} •{" "}
+          {new Date(
+            release.published_at || release.created_at
+          ).toLocaleDateString()}
+        </p>
+        {release.assets_count > 0 && (
+          <p className="text-xs text-gray-400 mt-1">
+            Assets: {release.assets_count}
+          </p>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+const StatsView = ({ data }) => {
+  // Sample visualization for stats
+  return (
+    <div className="space-y-4">
+      <div className="border border-gray-800 rounded p-4 bg-dark-200/50">
+        <h3 className="text-sm font-medium text-gray-200 mb-3">
+          Top Contributors
+        </h3>
+        <div className="space-y-2">
+          {data?.contributors?.slice(0, 5).map((contributor, index) => (
+            <div key={index} className="flex justify-between items-center">
+              <span className="text-sm text-gray-300">
+                {contributor.author}
+              </span>
+              <div className="flex items-center">
+                <span className="text-xs text-gray-400 mr-2">
+                  {contributor.commits} commits
+                </span>
+                <div className="w-24 bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (contributor.commits /
+                          Math.max(
+                            ...data.contributors.map((c) => c.commits)
+                          )) *
+                          100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="border border-gray-800 rounded p-4 bg-dark-200/50">
+        <h3 className="text-sm font-medium text-gray-200 mb-3">
+          Activity by Week
+        </h3>
+        <div className="flex h-32 items-end space-x-1">
+          {Object.entries(data?.participation_stats || {})
+            .slice(0, 12)
+            .map(([week, count], index) => (
+              <div key={index} className="flex-1 flex flex-col items-center">
+                <div
+                  className="w-full bg-gradient-to-t from-primary-500 to-secondary-500 rounded-t"
+                  style={{ height: `${Math.max(4, (count / 100) * 100)}%` }}
+                ></div>
+                <span className="text-xs text-gray-500 mt-1">
+                  {week.replace("week_", "")}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const UsersView = ({ data }) => (
+  <div className="space-y-4">
+    {data?.map((user, index) => (
+      <div
+        key={index}
+        className="border border-gray-800 rounded p-4 bg-dark-200/50 flex items-center"
+      >
+        {user.avatar_url && (
+          <img
+            src={user.avatar_url}
+            alt={user.username}
+            className="w-10 h-10 rounded-full mr-4"
+          />
+        )}
+        <div>
+          <h3 className="text-sm font-medium text-gray-200">{user.username}</h3>
+          <p className="text-xs text-gray-400 mt-1">
+            Contributions: {user.contributions}
+          </p>
+        </div>
+        {user.is_bot && (
+          <span className="ml-auto inline-block px-2 py-1 rounded-full text-xs bg-gray-800 text-gray-300">
+            BOT
+          </span>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+const RepoInfoView = ({ data }) => {
+  const info = data?.info || {};
+  const languages = data?.languages || {};
+
+  // Calculate percentages for language bar
+  const totalBytes = Object.values(languages).reduce(
+    (sum, bytes) => sum + bytes,
+    0
+  );
+  const languageItems = Object.entries(languages)
+    .sort((a, b) => b[1] - a[1])
+    .map(([language, bytes]) => ({
+      name: language,
+      percentage: (bytes / totalBytes) * 100,
+      bytes,
+    }));
+
+  return (
+    <div className="space-y-4">
+      <div className="border border-gray-800 rounded p-4 bg-dark-200/50">
+        <h3 className="text-sm font-medium text-gray-200 mb-2">
+          Repository Info
+        </h3>
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400">
+            Owner: <span className="text-gray-200">{info.owner}</span>
+          </p>
+          <p className="text-xs text-gray-400">
+            Name: <span className="text-gray-200">{info.name}</span>
+          </p>
+          <p className="text-xs text-gray-400">
+            Default Branch:{" "}
+            <span className="text-gray-200">{info.default_branch}</span>
+          </p>
+          <p className="text-xs text-gray-400">
+            Stars: <span className="text-gray-200">{info.stars}</span>
+          </p>
+          <p className="text-xs text-gray-400">
+            Forks: <span className="text-gray-200">{info.forks}</span>
+          </p>
+          {info.description && (
+            <p className="text-xs text-gray-400 mt-2">
+              Description:{" "}
+              <span className="text-gray-200">{info.description}</span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      {languageItems.length > 0 && (
+        <div className="border border-gray-800 rounded p-4 bg-dark-200/50">
+          <h3 className="text-sm font-medium text-gray-200 mb-2">Languages</h3>
+          <div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden flex">
+            {languageItems.map((lang, index) => (
+              <div
+                key={index}
+                className="h-full"
+                style={{
+                  width: `${lang.percentage}%`,
+                  backgroundColor: getLanguageColor(lang.name),
+                }}
+                title={`${lang.name}: ${lang.percentage.toFixed(1)}%`}
+              ></div>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {languageItems.slice(0, 5).map((lang, index) => (
+              <div key={index} className="flex items-center text-xs">
+                <div
+                  className="w-3 h-3 rounded-full mr-1"
+                  style={{ backgroundColor: getLanguageColor(lang.name) }}
+                ></div>
+                <span className="text-gray-300">{lang.name}</span>
+                <span className="text-gray-500 ml-1">
+                  ({lang.percentage.toFixed(1)}%)
+                </span>
+              </div>
+            ))}
+            {languageItems.length > 5 && (
+              <div className="text-xs text-gray-500">
+                +{languageItems.length - 5} more
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {data?.topics?.length > 0 && (
+        <div className="border border-gray-800 rounded p-4 bg-dark-200/50">
+          <h3 className="text-sm font-medium text-gray-200 mb-2">Topics</h3>
+          <div className="flex flex-wrap gap-2">
+            {data.topics.map((topic, index) => (
+              <span
+                key={index}
+                className="inline-block px-2 py-1 rounded-full text-xs bg-blue-900/30 text-blue-300"
+              >
+                {topic}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// A helper function to get colors for language visualization
+const getLanguageColor = (language) => {
+  const colors = {
+    JavaScript: "#f1e05a",
+    TypeScript: "#2b7489",
+    Python: "#3572A5",
+    Java: "#b07219",
+    Go: "#00ADD8",
+    C: "#555555",
+    "C++": "#f34b7d",
+    Ruby: "#701516",
+    PHP: "#4F5D95",
+    CSS: "#563d7c",
+    HTML: "#e34c26",
+    Swift: "#ffac45",
+    Kotlin: "#F18E33",
+    Rust: "#dea584",
+    Scala: "#c22d40",
+    // Default color for other languages
+    default: "#8257e6",
+  };
+
+  return colors[language] || colors.default;
+};
 
 const CodeSearch = () => {
   const location = useLocation();
@@ -23,6 +406,7 @@ const CodeSearch = () => {
   const [errors, setErrors] = useState({});
   const [isIndexed, setIsIndexed] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     // If URL is passed from another page, set it
@@ -127,20 +511,24 @@ const CodeSearch = () => {
         branch || (repoInfo ? repoInfo.default_branch : "main");
 
       // Show indexing toast
-      toast.info("Analyzing codebase...");
+      toast.info("Analyzing repository...");
 
-      // Use navigatorService to ask a question
-      const response = await navigatorService.question(
+      // Use smartNavigate instead of the old question method
+      const response = await navigatorService.smartNavigate(
         url,
         question,
-        branchToUse,
-        5
+        branchToUse
       );
 
       setSearchResults(response.data);
       setShowSuggestions(false);
 
+      // Reset the active tab
+      setActiveTab(0);
+
+      // For code search responses, handle file selection
       if (
+        response.data.api_type === "code_search" &&
         response.data.relevant_files &&
         response.data.relevant_files.length > 0
       ) {
@@ -152,7 +540,8 @@ const CodeSearch = () => {
           }`
         );
       } else {
-        toast.info("No relevant files found for your question");
+        // For other API types, show a generic success message
+        toast.success("Analysis complete!");
       }
 
       // Fetch repo info if not already loaded
@@ -160,9 +549,9 @@ const CodeSearch = () => {
         await fetchRepositoryInfo(url);
       }
     } catch (error) {
-      console.error("Error searching codebase:", error);
+      console.error("Error analyzing repository:", error);
 
-      let errorMessage = "Failed to search codebase";
+      let errorMessage = "Failed to analyze repository";
       if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       }
@@ -209,12 +598,248 @@ const CodeSearch = () => {
     "How does data flow through the codebase?",
     "Explain the directory structure of this project",
     "What design patterns are used in this codebase?",
-    "How are API calls handled?",
-    "How does the error handling work?",
-    "What database models exist in this project?",
-    "How is state management implemented?",
-    "How does the routing system work?",
+    "Who are the top contributors to this repository?",
+    "When was the last release and what did it include?",
+    "What open issues need to be fixed?",
+    "Show me recent pull requests",
+    "What programming languages are used in this project?",
   ];
+
+  // Determine which tabs to show based on API type
+  const getTabsForResults = () => {
+    if (!searchResults) return [];
+
+    const tabs = [{ label: "Answer", content: "answer" }];
+
+    // Add tabs based on API type
+    switch (searchResults.api_type) {
+      case "code_search":
+        if (searchResults.relevant_files?.length > 0) {
+          tabs.push({ label: "Code", content: "code" });
+        }
+        break;
+      case "commits":
+        if (searchResults.extra_data?.commits?.length > 0) {
+          tabs.push({ label: "Commits", content: "commits" });
+        }
+        break;
+      case "pulls":
+        if (searchResults.extra_data?.pull_requests?.length > 0) {
+          tabs.push({ label: "Pull Requests", content: "pulls" });
+        }
+        break;
+      case "issues":
+        if (searchResults.extra_data?.issues?.length > 0) {
+          tabs.push({ label: "Issues", content: "issues" });
+        }
+        break;
+      case "releases":
+        if (searchResults.extra_data?.releases?.length > 0) {
+          tabs.push({ label: "Releases", content: "releases" });
+        }
+        break;
+      case "stats":
+        if (searchResults.extra_data?.stats) {
+          tabs.push({ label: "Statistics", content: "stats" });
+        }
+        break;
+      case "users":
+        if (searchResults.extra_data?.contributors?.length > 0) {
+          tabs.push({ label: "Contributors", content: "users" });
+        }
+        break;
+      case "repos":
+        if (searchResults.extra_data?.repository) {
+          tabs.push({ label: "Repository Info", content: "repo" });
+        }
+        break;
+      default:
+        break;
+    }
+
+    return tabs;
+  };
+
+  // Render content based on active tab
+  const renderTabContent = () => {
+    if (!searchResults) return null;
+
+    const tabs = getTabsForResults();
+    if (activeTab >= tabs.length) return null;
+
+    const content = tabs[activeTab].content;
+
+    switch (content) {
+      case "answer":
+        return (
+          <div className="prose dark:prose-invert max-w-none text-gray-200">
+            <ReactMarkdown
+              rehypePlugins={[rehypeSanitize]}
+              components={{
+                code({ node, inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  return !inline && match ? (
+                    <CodeEditor
+                      code={String(children).replace(/\n$/, "")}
+                      language={match[1]}
+                      readOnly={true}
+                      lineNumbers={true}
+                      showCopyButton={true}
+                    />
+                  ) : (
+                    <code className={className} {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+              }}
+            >
+              {searchResults.answer}
+            </ReactMarkdown>
+          </div>
+        );
+      case "code":
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Files list on the left */}
+            <div>
+              <Card
+                title={`Relevant Files (${
+                  searchResults.relevant_files?.length || 0
+                })`}
+                noPadding
+                className="h-full bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow"
+              >
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b border-gray-800">
+                    <p className="text-sm text-gray-400">
+                      Question:{" "}
+                      <span className="font-medium text-white">{question}</span>
+                    </p>
+                  </div>
+
+                  <div
+                    className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                    style={{ maxHeight: "500px" }}
+                  >
+                    {searchResults.relevant_files &&
+                    searchResults.relevant_files.length > 0 ? (
+                      <ul className="divide-y divide-gray-800">
+                        {searchResults.relevant_files.map((file, index) => (
+                          <li
+                            key={index}
+                            className={`
+                              p-4 hover:bg-dark-200 cursor-pointer transition-colors duration-150
+                              ${
+                                selectedResult &&
+                                selectedResult.path === file.path
+                                  ? "bg-secondary-900/20 border-l-2 border-secondary-500"
+                                  : ""
+                              }
+                            `}
+                            onClick={() => setSelectedResult(file)}
+                          >
+                            <h3 className="text-sm font-medium text-gray-200 truncate">
+                              {file.path.split("/").pop()}
+                            </h3>
+                            <p className="mt-1 text-xs text-gray-500 truncate">
+                              {file.path}
+                            </p>
+                            <div className="mt-1 text-xs">
+                              <span
+                                className={`inline-block px-2 py-1 rounded-full text-xs
+                                  ${
+                                    file.relevance > 80
+                                      ? "bg-accent-900/30 text-accent-300"
+                                      : file.relevance > 50
+                                      ? "bg-secondary-900/30 text-secondary-300"
+                                      : "bg-primary-900/30 text-primary-300"
+                                  }
+                                `}
+                              >
+                                Relevance: {file.relevance.toFixed(1)}%
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="p-6 text-center text-gray-500">
+                        No relevant files found for your question.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Code view on the right */}
+            <div className="lg:col-span-2">
+              {selectedResult ? (
+                <Card
+                  title={selectedResult.path.split("/").pop()}
+                  subtitle={selectedResult.path}
+                  className="bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow"
+                >
+                  <CodeEditor
+                    code={selectedResult.snippet}
+                    language={detectLanguage(selectedResult.path)}
+                    readOnly={true}
+                    lineNumbers={true}
+                    showCopyButton={true}
+                    style={{ minHeight: "500px" }}
+                  />
+                </Card>
+              ) : (
+                <Card className="bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow">
+                  <div className="text-center py-12 text-gray-500">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mx-auto h-12 w-12 mb-4 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <p className="text-lg font-medium">
+                      Select a file from the list to view the code
+                    </p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      The AI has identified these files as most relevant to your
+                      question
+                    </p>
+                  </div>
+                </Card>
+              )}
+            </div>
+          </div>
+        );
+      case "commits":
+        return <CommitsView data={searchResults.extra_data?.commits} />;
+      case "pulls":
+        return (
+          <PullRequestsView data={searchResults.extra_data?.pull_requests} />
+        );
+      case "issues":
+        return <IssuesView data={searchResults.extra_data?.issues} />;
+      case "releases":
+        return <ReleasesView data={searchResults.extra_data?.releases} />;
+      case "stats":
+        return <StatsView data={searchResults.extra_data?.stats} />;
+      case "users":
+        return <UsersView data={searchResults.extra_data?.contributors} />;
+      case "repo":
+        return <RepoInfoView data={searchResults.extra_data?.repository} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div>
@@ -227,7 +852,7 @@ const CodeSearch = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-500 mb-2">
-              Code Q&A
+              Repository AI Assistant
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
               Ask questions about any GitHub repository and get AI-powered
@@ -248,9 +873,7 @@ const CodeSearch = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              <span>
-                Ask questions in natural language to understand any codebase
-              </span>
+              <span>Ask questions about code, commits, issues, and more!</span>
             </div>
           </div>
         </div>
@@ -313,7 +936,7 @@ const CodeSearch = () => {
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <Input
-                  label="Ask a Question About the Codebase"
+                  label="Ask a Question About the Repository"
                   placeholder="How is authentication implemented?"
                   value={question}
                   onChange={(e) => {
@@ -410,155 +1033,57 @@ const CodeSearch = () => {
 
       {searchResults && (
         <div className="space-y-6">
-          {/* Answer first */}
+          {/* Results section with tabs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
             <Card
-              title="Understanding the Code"
+              title="AI Analysis"
+              subtitle={
+                searchResults.api_type
+                  ? `Query type: ${searchResults.api_type.replace("_", " ")}`
+                  : ""
+              }
               className="bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow"
             >
-              <div className="prose dark:prose-invert max-w-none text-gray-200">
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(
-                      marked.parse(searchResults.answer)
-                    ),
-                  }}
-                />
-              </div>
+              {/* Tabs for different content types */}
+              <Tabs
+                tabs={getTabsForResults().map((tab) => tab.label)}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+                className="mb-6"
+              />
+
+              {/* Tab content */}
+              {renderTabContent()}
+
+              {/* Follow-up questions */}
+              {searchResults.followup_questions &&
+                searchResults.followup_questions.length > 0 && (
+                  <div className="mt-8 border-t border-gray-800 pt-6">
+                    <h3 className="text-sm font-medium text-gray-200 mb-3">
+                      Follow-up Questions:
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {searchResults.followup_questions.map((q, idx) => (
+                        <button
+                          key={idx}
+                          className="px-3 py-2 text-sm bg-dark-200 hover:bg-dark-300 text-gray-300 rounded-md transition"
+                          onClick={() => {
+                            setQuestion(q);
+                            handleSearch();
+                          }}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </Card>
           </motion.div>
-
-          {/* Relevant files and code snippets */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <Card
-                title={`Relevant Files (${
-                  searchResults.relevant_files?.length || 0
-                })`}
-                noPadding
-                className="h-full bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow"
-              >
-                <div className="h-full flex flex-col">
-                  <div className="p-4 border-b border-gray-800">
-                    <p className="text-sm text-gray-400">
-                      Question:{" "}
-                      <span className="font-medium text-white">{question}</span>
-                    </p>
-                  </div>
-
-                  <div
-                    className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
-                    style={{ maxHeight: "500px" }}
-                  >
-                    {searchResults.relevant_files &&
-                    searchResults.relevant_files.length > 0 ? (
-                      <ul className="divide-y divide-gray-800">
-                        {searchResults.relevant_files.map((file, index) => (
-                          <li
-                            key={index}
-                            className={`
-                              p-4 hover:bg-dark-200 cursor-pointer transition-colors duration-150
-                              ${
-                                selectedResult &&
-                                selectedResult.path === file.path
-                                  ? "bg-secondary-900/20 border-l-2 border-secondary-500"
-                                  : ""
-                              }
-                            `}
-                            onClick={() => setSelectedResult(file)}
-                          >
-                            <h3 className="text-sm font-medium text-gray-200 truncate">
-                              {file.path.split("/").pop()}
-                            </h3>
-                            <p className="mt-1 text-xs text-gray-500 truncate">
-                              {file.path}
-                            </p>
-                            <div className="mt-1 text-xs">
-                              <span
-                                className={`inline-block px-2 py-1 rounded-full text-xs
-                                  ${
-                                    file.relevance > 0.8
-                                      ? "bg-accent-900/30 text-accent-300"
-                                      : file.relevance > 0.5
-                                      ? "bg-secondary-900/30 text-secondary-300"
-                                      : "bg-primary-900/30 text-primary-300"
-                                  }
-                                `}
-                              >
-                                Relevance: {(file.relevance * 100).toFixed(1)}%
-                              </span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="p-6 text-center text-gray-500">
-                        No relevant files found for your question.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="lg:col-span-2"
-            >
-              {selectedResult ? (
-                <Card
-                  title={selectedResult.path.split("/").pop()}
-                  subtitle={selectedResult.path}
-                  className="bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow"
-                >
-                  <CodeEditor
-                    code={selectedResult.snippet}
-                    language={detectLanguage(selectedResult.path)}
-                    readOnly={true}
-                    lineNumbers={true}
-                    showCopyButton={true}
-                    style={{ minHeight: "500px" }}
-                  />
-                </Card>
-              ) : (
-                <Card className="bg-gradient-to-b from-dark-100/70 to-dark-100 border-none shadow-glow">
-                  <div className="text-center py-12 text-gray-500">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="mx-auto h-12 w-12 mb-4 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <p className="text-lg font-medium">
-                      Select a file from the list to view the code
-                    </p>
-                    <p className="mt-2 text-sm text-gray-600">
-                      The AI has identified these files as most relevant to your
-                      question
-                    </p>
-                  </div>
-                </Card>
-              )}
-            </motion.div>
-          </div>
         </div>
       )}
 
@@ -585,11 +1110,12 @@ const CodeSearch = () => {
               />
             </svg>
             <h2 className="text-2xl font-bold text-white mb-3">
-              Ask Me Anything About the Code
+              Ask Me Anything About the Repository
             </h2>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Enter a GitHub URL, then ask questions to understand the codebase
-              - from architecture to specific functionality.
+              Enter a GitHub URL, then ask questions to understand the
+              repository - from code structure to contributors and everything in
+              between.
             </p>
             <div className="flex flex-col gap-4 mt-6">
               <p className="text-sm font-medium text-gray-400">

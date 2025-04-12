@@ -141,14 +141,18 @@ func (c *GeminiClient) VisualizeArchitecture(ctx context.Context, repoInfo map[s
 	return c.GenerateText(ctx, prompt)
 }
 
-// AnswerCodebaseQuestion answers a question about the codebase
 func (c *GeminiClient) AnswerCodebaseQuestion(ctx context.Context, question string, relevantCode map[string]string) (string, error) {
-	prompt := buildCodebaseQAPrompt(question, relevantCode)
-	return c.GenerateText(ctx, prompt)
+    prompt := buildCodebaseQAPrompt(question, relevantCode)
+    return c.GenerateText(ctx, prompt)
 }
 
 // GenerateBestPracticesGuide generates a best practices guide
 func (c *GeminiClient) GenerateBestPracticesGuide(ctx context.Context, repoInfo map[string]interface{}, codebase map[string]string) (string, error) {
 	prompt := buildBestPracticesPrompt(repoInfo, codebase)
 	return c.GenerateText(ctx, prompt)
+}
+
+func (c *GeminiClient) GenerateArchitectureExplanation(ctx context.Context, graphData map[string]interface{}) (string, error) {
+    prompt := buildArchitectureExplanationPrompt(graphData)
+    return c.GenerateCompletion(ctx, prompt, 0.7, 1024)
 }

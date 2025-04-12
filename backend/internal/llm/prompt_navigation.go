@@ -105,21 +105,26 @@ Format your response in a clear, structured manner suitable for generating an ar
 `, repoInfoStr, fileStructure, importMapStr)
 }
 
-// buildCodebaseQAPrompt builds a prompt for answering questions about a codebase
+// Updated prompt builder with explicit guidance for proper formatting
 func buildCodebaseQAPrompt(question string, relevantCode map[string]string) string {
-	var codeStr strings.Builder
-	for file, content := range relevantCode {
-		codeStr.WriteString(fmt.Sprintf("FILE: %s\n\n", file))
-		codeStr.WriteString(content)
-		codeStr.WriteString("\n\n---\n\n")
-	}
-	
-	return fmt.Sprintf(`
+    var codeStr strings.Builder
+    
+    // Include full files with line numbers for context
+    for file, content := range relevantCode {
+        codeStr.WriteString(fmt.Sprintf("FILE: %s\n\n", file))
+        lines := strings.Split(content, "\n")
+        for i, line := range lines {
+            codeStr.WriteString(fmt.Sprintf("%d: %s\n", i+1, line))
+        }
+        codeStr.WriteString("\n\n---\n\n")
+    }
+    
+    return fmt.Sprintf(`
 You are an expert code analyst. Your task is to answer a question about a codebase using the available code snippets.
 
 Question: %s
 
-Here are the relevant code snippets:
+Here are the relevant code snippets with line numbers:
 
 %s
 
@@ -129,7 +134,7 @@ Please provide:
 3. Any additional context that would help understand the answer
 4. If relevant, suggest 2-3 follow-up questions that might be helpful
 
-Format your response in a clear, structured manner, and be sure to cite specific files and line numbers when referring to code.
+return your answer in markdown format, do not wrap it in markdown blocks or any other formatting. Just provide the content of the answer.
 `, question, codeStr.String())
 }
 
@@ -254,4 +259,24 @@ func (c *GeminiClient) GenerateCompletion(ctx context.Context, prompt string, te
     
     c.logger.Info("Completion generated successfully")
     return result, nil
+}
+
+func buildArchitectureExplanationPrompt(graphData map[string]interface{}) string {
+    graphDataStr, _ := json.MarshalIndent(graphData, "", "  ")
+    
+    return fmt.Sprintf(`
+You are an expert software architect. Your task is to analyze and explain the architecture of a codebase based on the provided graph data.
+
+Here is the graph data representing the codebase structure:
+%s
+
+Please provide:
+1. A high-level overview of the architecture
+2. Identification of key files and their roles in the system
+3. Explanation of important relationships between files
+4. Any notable patterns or architectural decisions evident from the graph
+5. Potential areas of interest or complexity for developers new to this codebase
+
+Format your response in a clear, structured manner that would help a developer quickly understand the overall architecture and key components of the system.
+`, string(graphDataStr))
 }

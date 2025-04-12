@@ -70,6 +70,10 @@ const navigatorService = {
   question: (url, question, branch = "", topK = 5) =>
     api.post("/navigate/question", { url, question, branch, top_k: topK }),
 
+  // Add smart navigate endpoint
+  smartNavigate: (url, question, branch = "") =>
+    api.post("/smart-navigate", { url, question, branch }),
+
   // Add these new methods
   visualizeArchitecture: (url, branch, detailLevel, focusPaths) =>
     api.post("/navigate/architecture", {
@@ -104,6 +108,9 @@ const navigatorService = {
 
   getArchitectureGraph: (url, branch) =>
     api.post("/navigate/architecture-graph", { url, branch }),
+
+  getArchitectureGraphAndExplanation: (url, branch) =>
+    api.post("/navigate/explain-architecture", { url, branch }),
 };
 
 // Push endpoints
