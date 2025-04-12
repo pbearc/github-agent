@@ -184,7 +184,7 @@ func (h *Handler) handleCodeSearchQuestion(ctx context.Context, owner, repo, bra
 	navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
 
 	// Use the existing AnswerCodebaseQuestion method but pass the keywords if available
-	answer, err := navigationService.AnswerCodebaseQuestion(ctx, owner, repo, branch, question)
+	answer, err := navigationService.AnswerCodebaseQuestion(ctx, owner, repo, branch, question, keywords)
 	if err != nil {
 		return nil, common.WrapError(err, "failed to answer question")
 	}

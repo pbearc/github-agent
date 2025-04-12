@@ -852,7 +852,7 @@ const CodeSearch = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-500 mb-2">
-              Repository AI Assistant
+              Code Q&A
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
               Ask questions about any GitHub repository and get AI-powered
@@ -901,34 +901,6 @@ const CodeSearch = () => {
                 onChange={(e) => setBranch(e.target.value)}
                 dark
               />
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleIndex}
-              isLoading={indexing}
-              disabled={indexing}
-              className="border-secondary-500 text-secondary-400 hover:bg-secondary-500/10"
-            >
-              {indexing ? "Indexing..." : "Index Repository"}
-            </Button>
-            <div className="text-sm text-gray-400 dark:text-gray-400 flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-secondary-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Indexing allows for more accurate code analysis
             </div>
           </div>
 

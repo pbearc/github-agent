@@ -98,14 +98,6 @@ const navigatorService = {
       focus_paths: focusPaths,
     }),
 
-  getBestPractices: (url, branch, scope, scopePath) =>
-    api.post("/navigate/practices", {
-      url,
-      branch,
-      scope,
-      path: scopePath, // Note: parameter name is "path" not "scope_path"
-    }),
-
   getArchitectureGraph: (url, branch) =>
     api.post("/navigate/architecture-graph", { url, branch }),
 

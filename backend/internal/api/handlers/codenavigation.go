@@ -112,18 +112,7 @@ func (h *Handler) IndexCodebaseForNavigation(c *gin.Context) {
         h.Logger.WithField("error", err).Warning("Failed to visualize architecture")
     }
 
-    // Generate best practices guide
-    bestPractices, err := navigationService.GenerateBestPracticesGuide(
-        ctx,
-        owner,
-        repo,
-        req.Branch,
-        "full", // Full repository scope
-        "", // No specific path
-    )
-    if err != nil {
-        h.Logger.WithField("error", err).Warning("Failed to generate best practices guide")
-    }
+    
 
     response := gin.H{
         "owner":          repoInfo.Owner,
@@ -131,7 +120,7 @@ func (h *Handler) IndexCodebaseForNavigation(c *gin.Context) {
         "structure":      structure,
         "walkthrough":    walkthrough,
         "architecture":   architecture,
-        "best_practices": bestPractices,
+
     }
 
     c.JSON(http.StatusOK, response)
@@ -176,6 +165,7 @@ func (h *Handler) NavigateCodebaseWithLLM(c *gin.Context) {
         repo,
         req.Branch,
         req.Question,
+        nil,
     )
     if err != nil {
         c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -472,52 +462,4 @@ func (h *Handler) VisualizeArchitecture(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, architecture)
-}
-
-// GenerateBestPracticesGuide handles best practices guide generation requests
-func (h *Handler) GenerateBestPracticesGuide(c *gin.Context) {
-    var req models.BestPracticesRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, models.ErrorResponse{
-            Error: "Invalid request",
-            Details: err.Error(),
-        })
-        return
-    }
-
-    // Parse the GitHub URL
-    owner, repo, err := github.ParseRepoURL(req.URL)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, models.ErrorResponse{
-            Error: "Invalid GitHub URL",
-            Details: err.Error(),
-        })
-        return
-    }
-
-    // Set a timeout for the GitHub API request
-    ctx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
-    defer cancel()
-
-    // Create the navigation service
-    navigationService := services.NewCodeNavigationService(h.GithubClient, h.LLMClient, h.Neo4jClient)
-
-    // Generate best practices guide
-    bestPractices, err := navigationService.GenerateBestPracticesGuide(
-        ctx,
-        owner,
-        repo,
-        req.Branch,
-        req.Scope,
-        req.Path,
-    )
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-            Error: "Failed to generate best practices guide",
-            Details: err.Error(),
-        })
-        return
-    }
-
-    c.JSON(http.StatusOK, bestPractices)
 }

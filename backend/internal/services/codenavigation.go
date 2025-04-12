@@ -882,7 +882,7 @@ func (s *CodeNavigationService) generateFallbackVisualization(
 }
 
 // AnswerCodebaseQuestion answers a question about the codebase
-func (s *CodeNavigationService) AnswerCodebaseQuestion(ctx context.Context, owner, repo, branch, question string) (*models.CodebaseQAResponse, error) {
+func (s *CodeNavigationService) AnswerCodebaseQuestion(ctx context.Context, owner, repo, branch, question string, keywords []string) (*models.CodebaseQAResponse, error) {
     // Get repository info
     repoInfo, err := s.githubClient.GetRepositoryInfo(ctx, owner, repo)
     if err != nil {
@@ -894,11 +894,14 @@ func (s *CodeNavigationService) AnswerCodebaseQuestion(ctx context.Context, owne
         branch = repoInfo.DefaultBranch
     }
 
-    // Extract search keywords from the question using LLM
-    keywords, err := s.extractSearchKeywords(ctx, question, repoInfo.Language)
-    if err != nil {
-        s.logger.WithField("error", err).Warning("Failed to extract keywords, falling back to original question")
-        keywords = []string{question}
+    // If no keywords provided, extract them
+    if len(keywords) == 0 {
+        var err error
+        keywords, err = s.extractSearchKeywords(ctx, question, repoInfo.Language)
+        if err != nil {
+            s.logger.WithField("error", err).Warning("Failed to extract keywords, using question as keyword")
+            keywords = []string{question}
+        }
     }
 
     // Collect relevant code from all keywords
@@ -935,8 +938,8 @@ func (s *CodeNavigationService) AnswerCodebaseQuestion(ctx context.Context, owne
         }
     }
 
-    // If we couldn't find enough relevant code, get some key files
-    if len(relevantCode) < 3 {
+    // If couldn't find enough relevant code, get some key files
+    if len(relevantCode) < 2 {
         entryPoints := s.detectEntryPoints(ctx, owner, repo, branch, repoInfo.Language)
         for _, entryPoint := range entryPoints {
             if _, exists := relevantCode[entryPoint]; !exists {
@@ -1052,115 +1055,6 @@ func (s *CodeNavigationService) fallbackKeywordExtraction(response string) []str
     }
     
     return unique
-}
-
-// GenerateBestPracticesGuide generates a best practices guide
-func (s *CodeNavigationService) GenerateBestPracticesGuide(ctx context.Context, owner, repo, branch, scope, path string) (*models.BestPracticesResponse, error) {
-    // Get repository info
-    repoInfo, err := s.githubClient.GetRepositoryInfo(ctx, owner, repo)
-    if err != nil {
-        return nil, common.WrapError(err, "failed to get repository info")
-    }
-
-    // If branch is not specified, use the default branch
-    if branch == "" {
-        branch = repoInfo.DefaultBranch
-    }
-
-    // Determine the scope of files to analyze
-    var filesToAnalyze []string
-    if scope == "file" && path != "" {
-        filesToAnalyze = []string{path}
-    } else if scope == "directory" && path != "" {
-        files, err := s.githubClient.ListFiles(ctx, owner, repo, path, branch)
-        if err != nil {
-            return nil, common.WrapError(err, "failed to list files in directory")
-        }
-        
-        for _, file := range files {
-            if file == nil || file.Path == nil || file.Type == nil {
-                continue
-            }
-            
-            if *file.Type == "file" && github.IsSourceFile(*file.Path) {
-                filesToAnalyze = append(filesToAnalyze, *file.Path)
-            }
-        }
-    } else {
-        // Full repository scope - get a sample of source files
-        allFiles, err := s.githubClient.GetAllFiles(ctx, owner, repo, branch)
-        if err != nil {
-            return nil, common.WrapError(err, "failed to get all files")
-        }
-        
-        var sourceFiles []string
-        for _, file := range allFiles {
-            if file.Type == "file" && github.IsSourceFile(file.Path) {
-                sourceFiles = append(sourceFiles, file.Path)
-            }
-        }
-        
-        // Limit to a reasonable number of files for analysis
-        maxFiles := 10
-        if len(sourceFiles) > maxFiles {
-            filesToAnalyze = sourceFiles[:maxFiles]
-        } else {
-            filesToAnalyze = sourceFiles
-        }
-    }
-
-    // Collect code from files to analyze
-    codebase := make(map[string]string)
-    for _, filePath := range filesToAnalyze {
-        content, err := s.githubClient.GetFileContentText(ctx, owner, repo, filePath, branch)
-        if err != nil {
-            s.logger.WithField("error", err).Warning("Failed to get content for file: " + filePath)
-            continue
-        }
-        
-        codebase[filePath] = content.Content
-    }
-
-    // Convert repository info to a map for the LLM
-    repoInfoMap := map[string]interface{}{
-        "owner":          repoInfo.Owner,
-        "name":           repoInfo.Name,
-        "description":    repoInfo.Description,
-        "default_branch": repoInfo.DefaultBranch,
-        "url":            repoInfo.URL,
-        "language":       repoInfo.Language,
-        "stars":          repoInfo.Stars,
-        "forks":          repoInfo.Forks,
-    }
-
-    // Generate best practices guide using LLM
-	bestPracticesJSON, err := s.llmClient.GenerateBestPracticesGuide(ctx, repoInfoMap, codebase)
-	if err != nil {
-		return nil, common.WrapError(err, "failed to generate best practices guide")
-	}
-
-	s.logger.WithField("llm_response", bestPracticesJSON).Info("LLM response for best practices")
-
-	// If JSON parsing fails, try to extract some data from text
-	var bestPractices models.BestPracticesResponse
-	err = json.Unmarshal([]byte(bestPracticesJSON), &bestPractices)
-	if err != nil {
-		s.logger.WithField("error", err).Warning("Failed to parse LLM response as JSON, using text extraction")
-		bestPractices = s.structureBestPracticesGuide(bestPracticesJSON)
-		
-		// If the structured response is still empty, create a minimal response
-		if len(bestPractices.Practices) == 0 && bestPractices.StyleGuide == "" {
-			// Add at least one practice to avoid empty response
-			bestPractices.StyleGuide = "Style guide could not be automatically generated. Please review the codebase manually."
-			bestPractices.Practices = append(bestPractices.Practices, models.BestPractice{
-				Title: "Code Organization",
-				Description: "The repository structure appears to follow standard conventions. Further manual analysis is recommended.",
-				Examples: []string{"Review the directory structure to understand the organization."},
-			})
-		}
-	}
-
-	return &bestPractices, nil
 }
 
 // Helper functions for detecting entry points and structuring LLM responses
