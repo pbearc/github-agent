@@ -860,7 +860,7 @@ const CodeSearch = () => {
             </p>
           </div>
           <div className="mt-4 md:mt-0">
-            <div className="text-sm inline-flex items-center rounded-full bg-warning-50 dark:bg-warning-900/20 px-3 py-1 text-warning-700 dark:text-warning-300 border border-warning-200 dark:border-warning-800">
+            <div className="text-sm inline-flex items-center rounded-full bg-secondary-50 dark:bg-secondary-900/20 px-3 py-1 text-secondary-700 dark:text-secondary-300 border border-secondary-200 dark:border-secondary-800">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-4 w-4 mr-1"

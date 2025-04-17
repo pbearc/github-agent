@@ -203,11 +203,12 @@ const ArchitectureAndPractices = () => {
               Codebase Structure & Architecture
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              Visualize architecture in the repository
+              Visualize architecture in the repository (Works better with
+              golang)
             </p>
           </div>
           <div className="mt-4 md:mt-0">
-            <div className="text-sm inline-flex items-center rounded-full bg-accent-50 dark:bg-accent-900/20 px-3 py-1 text-accent-700 dark:text-accent-300 border border-accent-200 dark:border-accent-800">
+            <div className="text-sm inline-flex items-center rounded-full bg-secondary-50 dark:bg-secondary-900/20 px-3 py-1 text-secondary-700 dark:text-secondary-300 border border-secondary-200 dark:border-secondary-800">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-4 w-4 mr-1"

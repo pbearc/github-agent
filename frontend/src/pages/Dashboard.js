@@ -652,7 +652,7 @@ const Dashboard = () => {
                       <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg blur-sm opacity-40"></div>
                       <img
                         className="relative w-full max-w-md rounded-lg shadow-lg"
-                        src="/api/placeholder/600/400"
+                        src="image.png"
                         alt="Code Understanding"
                       />
                     </div>
