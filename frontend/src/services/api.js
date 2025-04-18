@@ -2,9 +2,7 @@ import axios from "axios";
 
 // Create an axios instance with baseURL
 const api = axios.create({
-  baseURL:
-    process.env.REACT_APP_API_URL ||
-    "http://github-agent-load-balancer-1708352436.us-east-1.elb.amazonaws.com:8080/api",
+  baseURL: process.env.REACT_APP_API_URL || "https://api.behhanyu.xyz/api",
   headers: {
     "Content-Type": "application/json",
   },

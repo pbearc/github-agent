@@ -10,7 +10,7 @@ import (
 // CORS middleware with proper preflight handling
 func CORS() gin.HandlerFunc {
 	config := cors.Config{
-		AllowOrigins:     []string{"http://githubagents3-18042025.s3-website-us-east-1.amazonaws.com"},
+		AllowOrigins:     []string{"https://dev.d35iy2uozu6zfv.amplifyapp.com"}, // Changed to Amplify
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
